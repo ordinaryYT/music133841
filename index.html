@@ -12,100 +12,98 @@
       --primary: #1db954;
       --text: #ffffff;
       --text-secondary: #b3b3b3;
+      --active: #ffffff;
     }
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background:var(--bg); color:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; overflow:hidden; }
     .sidebar { width:240px; background:var(--sidebar); padding:20px 0; flex-shrink:0; }
     .logo { padding:0 24px; font-size:28px; font-weight:900; color:var(--primary); margin-bottom:40px; }
     .nav { padding:0 16px; }
-    .nav a { display:flex; align-items:center; gap:16px; padding:12px 8px; color:var(--text-secondary); text-decoration:none; border-radius:4px; margin-bottom:4px; }
-    .nav a:hover, .nav a.active { background:#282828; color:white; }
-    .nav a i { font-size:20px; width:24px; }
+    .nav a { display:flex; align-items:center; gap:16px; padding:12px 8px; color:var(--text-secondary); text-decoration:none; border-radius:4px; margin-bottom:4px; font-weight:600; }
+    .nav a.active, .nav a:hover { background:#282828; color:var(--active); }
+    .nav a i { font-size:20px; width:24px; text-align:center; }
     .playlists { margin-top:40px; padding:0 24px; }
-    .playlists h4 { color:var(--text-secondary); font-size:12px; letter-spacing:1px; margin-bottom:8px; }
-    .main { flex:1; display:flex; flex-direction:column; background:linear-gradient(#1f1f1f, var(--bg) 30%); }
-    .topbar { height:64px; background:rgba(0,0,0,0.7); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:space-between; padding:0 16px; position:sticky; top:0; z-index:10; }
-    .search { background:#242424; border-radius:30px; padding:10px 16px; color:white; border:none; width:360px; }
-    .content { flex:1; padding:24px; overflow-y:auto; }
+    .playlists a { display:flex; align-items:center; gap:12px; color:var(--text-secondary); text-decoration:none; margin-bottom:12px; font-size:14px; }
+    .main { flex:1; display:flex; flex-direction:column; background:linear-gradient(180deg, #1f1f1f 0%, var(--bg) 30%); }
+    .topbar { height:64px; background:rgba(0,0,0,0.7); backdrop-filter:blur(20px); padding:0 24px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10; }
+    .search-input { background:#242424; border-radius:30px; padding:10px 40px 10px 16px; color:white; border:none; width:380px; font-size:15px; }
+    .search-input::placeholder { color:#a0a0a0; }
+    .content { flex:1; padding:32px 24px; overflow-y:auto; }
+    h1 { font-size:48px; margin-bottom:32px; }
     .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:24px; }
-    .card { background:#181818; border-radius:8px; padding:16px; transition:0.2s; cursor:pointer; }
+    .card { background:#181818; border-radius:8px; padding:16px; transition:.2s; cursor:pointer; position:relative; }
     .card:hover { background:#282828; transform:scale(1.04); }
     .card img { width:100%; border-radius:6px; margin-bottom:12px; }
-    .card h3 { font-size:14px; margin-bottom:4px; }
-    .card p { font-size:12px; color:var(--text-secondary); }
-    .play-btn { width:50px; height:50px; background:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(29,185,84,0.4); opacity:0; transition:0.2s; margin-top:12px; }
-    .card:hover .play-btn { opacity:1; transform:translateY(-8px); }
-    .player { height:90px; background:#181818; border-top:1px solid #282828; display:flex; align-items:center; padding:0 16px; gap:20px; }
-    .now-playing { display:flex; align-items:center; gap:14px; width:300px; }
+    .card h3 { font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .card p { font-size:13px; color:var(--text-secondary); }
+    .play-btn { width:50px; height:50px; background:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(29,185,84,.5); position:absolute; bottom:70px; right:16px; opacity:0; transition:.3s; }
+    .card:hover .play-btn { opacity:1; transform:translateY(-10px); }
+    .player { height:90px; background:#181818; border-top:1px solid #282828; display:flex; align-items:center; padding:0 16px; gap:24px; }
+    .now-playing { display:flex; align-items:center; gap:14px; min-width:0; flex:1; }
     .now-playing img { width:56px; height:56px; border-radius:4px; }
-    .controls { flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; }
-    .control-btns { display:flex; gap:20px; }
-    .control-btns button { background:none; border:none; color:white; font-size:20px; cursor:pointer; }
-    .progress { width:100%; height:4px; background:#404040; border-radius:2px; }
-    .progress-fill { width:30%; height:100%; background:var(--primary); border-radius:2px; }
-    .volume { width:200px; display:flex; align-items:center; gap:10px; }
-    .volume input { flex:1; }
+    .now-info { min-width:0; }
+    .now-info div { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .controls { flex:2; display:flex; flex-direction:column; align-items:center; gap:8px; }
+    .control-btns { display:flex; align-items:center; gap:20px; }
+    .control-btns button { background:none; border:none; color:white; font-size:18px; cursor:pointer; }
+    #playPauseBtn { font-size:32px !important; }
+    .progress-bar { width:100%; height:4px; background:#404040; border-radius:2px; overflow:hidden; }
+    .progress-fill { height:100%; width:0%; background:var(--primary); transition:width .1s; }
+    .volume { flex:1; display:flex; align-items:center; justify-content:flex-end; gap:10px; max-width:200px; }
   </style>
 </head>
 <body>
-  <!-- Sidebar -->
   <div style="display:flex; height:100%">
+    <!-- Sidebar -->
     <div class="sidebar">
       <div class="logo">OGmusic</div>
       <div class="nav">
-        <a href="#" class="active"><i class="fas fa-home"></i> Home</a>
-        <a href="#"><i class="fas fa-search"></i> Search</a>
-        <a href="#"><i class="fas fa-book"></i> Your Library</a>
+        <a href="#" class="active" data-page="home"><i class="fas fa-home"></i> Home</a>
+        <a href="#" data-page="search"><i class="fas fa-search"></i> Search</a>
+        <a href="#" data-page="library"><i class="fas fa-book"></i> Your Library</a>
+        <a href="#" data-page="liked"><i class="fas fa-heart"></i> Liked Songs</a>
       </div>
       <div class="playlists">
-        <h4>PLAYLISTS</h4>
         <a href="#"><i class="fas fa-plus-square"></i> Create Playlist</a>
-        <a href="#"><i class="fas fa-heart"></i> Liked Songs</a>
       </div>
     </div>
 
-    <!-- Main Content -->
+    <!-- Main -->
     <div class="main">
       <div class="topbar">
-        <div style="display:flex; gap:16px">
-          <button style="background:#000; color:white; border:none; width:32px; height:32px; border-radius:50%"><i class="fas fa-chevron-left"></i></button>
-          <button style="background:#000; color:white; border:none; width:32px; height:32px; border-radius:50%"><i class="fas fa-chevron-right"></i></button>
-        </div>
-        <input type="text" class="search" placeholder="What do you want to play?" id="searchInput" onkeyup="if(event.key==='Enter') search()">
-        <div style="display:flex; align-items:center; gap:16px">
-          <button style="background:#000; color:white; padding:8px 16px; border-radius:30px; border:none">Explore Premium</button>
-          <div style="width:32px; height:32px; background:#ff5e00; border-radius:50%; display:flex; align-items:center; justify-content:center">O</div>
-        </div>
+        <div></div> <!-- left side empty now -->
+        <input type="text" class="search-input" placeholder="What do you want to play?" id="searchInput" onkeypress="if(event.key==='Enter') search()">
+        <div></div> <!-- right side empty now -->
       </div>
 
       <div class="content">
-        <h1 style="font-size:48px; margin-bottom:32px">Good evening</h1>
+        <h1 id="pageTitle">Good evening</h1>
         <div class="grid" id="results"></div>
       </div>
 
-      <!-- Player Bar -->
+      <!-- Player -->
       <div class="player">
         <div class="now-playing">
           <img id="nowThumb" src="https://via.placeholder.com/56" alt="">
-          <div>
-            <div id="nowTitle">Select a song</div>
+          <div class="now-info">
+            <div id="nowTitle">Select a song to play</div>
             <small id="nowArtist" style="color:#b3b3b3">OGmusic</small>
           </div>
-          <i class="fas fa-heart" style="margin-left:auto; cursor:pointer"></i>
+          <i class="far fa-heart" style="margin-left:auto; cursor:pointer"></i>
         </div>
 
         <div class="controls">
           <div class="control-btns">
             <button><i class="fas fa-random"></i></button>
             <button onclick="prevTrack()"><i class="fas fa-step-backward"></i></button>
-            <button onclick="playPause()" style="font-size:28px"><i id="playIcon" class="fas fa-play-circle"></i></button>
+            <button id="playPauseBtn" onclick="playPause()"><i id="playIcon" class="fas fa-play-circle"></i></button>
             <button onclick="nextTrack()"><i class="fas fa-step-forward"></i></button>
             <button><i class="fas fa-redo"></i></button>
           </div>
-          <div style="width:100%; display:flex; align-items:center; gap:10px">
-            <small>0:00</small>
-            <div class="progress"><div class="progress-fill"></div></div>
-            <small>0:00</small>
+          <div style="width:100%; display:flex; align-items:center; gap:10px; font-size:12px">
+            <span id="currentTime">0:00</span>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <span id="duration">0:00</span>
           </div>
         </div>
 
@@ -117,26 +115,40 @@
     </div>
   </div>
 
-  <!-- Hidden YouTube Player -->
-  <div style="position:fixed; bottom:0; left:0; opacity:0; pointer-events:none">
-    <div id="ytplayer"></div>
-  </div>
+  <div id="ytplayer" style="position:fixed; opacity:0; pointer-events:none"></div>
 
   <script src="https://www.youtube.com/iframe_api"></script>
   <script>
     const API_KEY = 'AIzaSyAMmMh2xRotnCthmKrZut9QjVd47qQ_7_o';
-    let player, currentIndex = 0, playlist = [];
+    let player, playlist = [], currentIndex = 0;
+
+    // Navigation
+    document.querySelectorAll('.nav a').forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        document.querySelector('.nav a.active')?.classList.remove('active');
+        link.classList.add('active');
+        const page = link.dataset.page;
+        document.getElementById('pageTitle').textContent = 
+          page === 'home' ? 'Good evening' :
+          page === 'search' ? 'Search' :
+          page === 'library' ? 'Your Library' :
+          'Liked Songs';
+        if (page !== 'search') document.getElementById('results').innerHTML = '<p style="color:#aaa; text-align:center; margin-top:100px">Coming soon</p>';
+      });
+    });
 
     function onYouTubeIframeAPIReady() {
       player = new YT.Player('ytplayer', {
         height: '0', width: '0',
-        playerVars: { autoplay: 1, controls: 0, fs: 0, rel: 0 },
-        events: { 'onReady': () => {}, 'onStateChange': onPlayerStateChange }
+        playerVars: { autoplay:1, controls:0, rel:0, fs:0 },
+        events: { 'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange }
       });
     }
 
+    function onPlayerReady() { }
     function onPlayerStateChange(e) {
-      if (e.data === 0) nextTrack(); // ended → next
+      if (e.data === 0) nextTrack(); // auto next
     }
 
     function search() {
@@ -158,7 +170,7 @@
           <img src="${track.thumb}" alt="">
           <h3>${track.title}</h3>
           <p>${track.artist}</p>
-          <div class="play-btn"><i class="fas fa-play" style="font-size:20px; margin-left:2px"></i></div>
+          <div class="play-btn"><i class="fas fa-play" style="margin-left:3px; font-size:22px"></i></div>
         </div>
       `).join('');
     }
@@ -174,6 +186,7 @@
     }
 
     function playPause() {
+      if (!player) return;
       if (player.getPlayerState() === 1) {
         player.pauseVideo();
         document.getElementById('playIcon').className = 'fas fa-play-circle';
@@ -185,6 +198,24 @@
 
     function nextTrack() { if (playlist.length) playTrack((currentIndex + 1) % playlist.length); }
     function prevTrack() { if (playlist.length) playTrack((currentIndex - 1 + playlist.length) % playlist.length); }
+
+    // Optional: update progress bar (every second)
+    setInterval(() => {
+      if (player && player.getCurrentTime) {
+        const current = player.getCurrentTime() || 0;
+        const duration = player.getDuration() || 0;
+        const percent = duration ? (current / duration) * 100 : 0;
+        document.getElementById('progressFill').style.width = percent + '%';
+        document.getElementById('currentTime').textContent = formatTime(current);
+        document.getElementById('duration').textContent = formatTime(duration);
+      }
+    }, 1000);
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = Math.floor(seconds % 60);
+      return `${m}:${s.toString().padStart(2,'0')}`;
+    }
   </script>
 </body>
 </html>

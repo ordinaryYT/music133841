@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OGmusic</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    :root {
+      --bg: #121212;
+      --sidebar: #000000;
+      --primary: #1db954;
+      --text: #ffffff;
+      --text-secondary: #b3b3b3;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+    .sidebar { width:240px; background:var(--sidebar); padding:20px 0; flex-shrink:0; }
+    .logo { padding:0 24px; font-size:28px; font-weight:900; color:var(--primary); margin-bottom:40px; }
+    .nav { padding:0 16px; }
+    .nav a { display:flex; align-items:center; gap:16px; padding:12px 8px; color:var(--text-secondary); text-decoration:none; border-radius:4px; margin-bottom:4px; }
+    .nav a:hover, .nav a.active { background:#282828; color:white; }
+    .nav a i { font-size:20px; width:24px; }
+    .playlists { margin-top:40px; padding:0 24px; }
+    .playlists h4 { color:var(--text-secondary); font-size:12px; letter-spacing:1px; margin-bottom:8px; }
+    .main { flex:1; display:flex; flex-direction:column; background:linear-gradient(#1f1f1f, var(--bg) 30%); }
+    .topbar { height:64px; background:rgba(0,0,0,0.7); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:space-between; padding:0 16px; position:sticky; top:0; z-index:10; }
+    .search { background:#242424; border-radius:30px; padding:10px 16px; color:white; border:none; width:360px; }
+    .content { flex:1; padding:24px; overflow-y:auto; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:24px; }
+    .card { background:#181818; border-radius:8px; padding:16px; transition:0.2s; cursor:pointer; }
+    .card:hover { background:#282828; transform:scale(1.04); }
+    .card img { width:100%; border-radius:6px; margin-bottom:12px; }
+    .card h3 { font-size:14px; margin-bottom:4px; }
+    .card p { font-size:12px; color:var(--text-secondary); }
+    .play-btn { width:50px; height:50px; background:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(29,185,84,0.4); opacity:0; transition:0.2s; margin-top:12px; }
+    .card:hover .play-btn { opacity:1; transform:translateY(-8px); }
+    .player { height:90px; background:#181818; border-top:1px solid #282828; display:flex; align-items:center; padding:0 16px; gap:20px; }
+    .now-playing { display:flex; align-items:center; gap:14px; width:300px; }
+    .now-playing img { width:56px; height:56px; border-radius:4px; }
+    .controls { flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; }
+    .control-btns { display:flex; gap:20px; }
+    .control-btns button { background:none; border:none; color:white; font-size:20px; cursor:pointer; }
+    .progress { width:100%; height:4px; background:#404040; border-radius:2px; }
+    .progress-fill { width:30%; height:100%; background:var(--primary); border-radius:2px; }
+    .volume { width:200px; display:flex; align-items:center; gap:10px; }
+    .volume input { flex:1; }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div style="display:flex; height:100%">
+    <div class="sidebar">
+      <div class="logo">OGmusic</div>
+      <div class="nav">
+        <a href="#" class="active"><i class="fas fa-home"></i> Home</a>
+        <a href="#"><i class="fas fa-search"></i> Search</a>
+        <a href="#"><i class="fas fa-book"></i> Your Library</a>
+      </div>
+      <div class="playlists">
+        <h4>PLAYLISTS</h4>
+        <a href="#"><i class="fas fa-plus-square"></i> Create Playlist</a>
+        <a href="#"><i class="fas fa-heart"></i> Liked Songs</a>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main">
+      <div class="topbar">
+        <div style="display:flex; gap:16px">
+          <button style="background:#000; color:white; border:none; width:32px; height:32px; border-radius:50%"><i class="fas fa-chevron-left"></i></button>
+          <button style="background:#000; color:white; border:none; width:32px; height:32px; border-radius:50%"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <input type="text" class="search" placeholder="What do you want to play?" id="searchInput" onkeyup="if(event.key==='Enter') search()">
+        <div style="display:flex; align-items:center; gap:16px">
+          <button style="background:#000; color:white; padding:8px 16px; border-radius:30px; border:none">Explore Premium</button>
+          <div style="width:32px; height:32px; background:#ff5e00; border-radius:50%; display:flex; align-items:center; justify-content:center">O</div>
+        </div>
+      </div>
+
+      <div class="content">
+        <h1 style="font-size:48px; margin-bottom:32px">Good evening</h1>
+        <div class="grid" id="results"></div>
+      </div>
+
+      <!-- Player Bar -->
+      <div class="player">
+        <div class="now-playing">
+          <img id="nowThumb" src="https://via.placeholder.com/56" alt="">
+          <div>
+            <div id="nowTitle">Select a song</div>
+            <small id="nowArtist" style="color:#b3b3b3">OGmusic</small>
+          </div>
+          <i class="fas fa-heart" style="margin-left:auto; cursor:pointer"></i>
+        </div>
+
+        <div class="controls">
+          <div class="control-btns">
+            <button><i class="fas fa-random"></i></button>
+            <button onclick="prevTrack()"><i class="fas fa-step-backward"></i></button>
+            <button onclick="playPause()" style="font-size:28px"><i id="playIcon" class="fas fa-play-circle"></i></button>
+            <button onclick="nextTrack()"><i class="fas fa-step-forward"></i></button>
+            <button><i class="fas fa-redo"></i></button>
+          </div>
+          <div style="width:100%; display:flex; align-items:center; gap:10px">
+            <small>0:00</small>
+            <div class="progress"><div class="progress-fill"></div></div>
+            <small>0:00</small>
+          </div>
+        </div>
+
+        <div class="volume">
+          <i class="fas fa-volume-up"></i>
+          <input type="range" min="0" max="100" value="80"/>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden YouTube Player -->
+  <div style="position:fixed; bottom:0; left:0; opacity:0; pointer-events:none">
+    <div id="ytplayer"></div>
+  </div>
+
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script>
+    const API_KEY = 'AIzaSyAMmMh2xRotnCthmKrZut9QjVd47qQ_7_o';
+    let player, currentIndex = 0, playlist = [];
+
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('ytplayer', {
+        height: '0', width: '0',
+        playerVars: { autoplay: 1, controls: 0, fs: 0, rel: 0 },
+        events: { 'onReady': () => {}, 'onStateChange': onPlayerStateChange }
+      });
+    }
+
+    function onPlayerStateChange(e) {
+      if (e.data === 0) nextTrack(); // ended → next
+    }
+
+    function search() {
+      const q = document.getElementById('searchInput').value.trim();
+      if (!q) return;
+      fetch(`/api/search?q=${encodeURIComponent(q)}`)
+        .then(r => r.json())
+        .then(data => {
+          playlist = data;
+          currentIndex = 0;
+          displayResults();
+        });
+    }
+
+    function displayResults() {
+      const container = document.getElementById('results');
+      container.innerHTML = playlist.map((track, i) => `
+        <div class="card" onclick="playTrack(${i})">
+          <img src="${track.thumb}" alt="">
+          <h3>${track.title}</h3>
+          <p>${track.artist}</p>
+          <div class="play-btn"><i class="fas fa-play" style="font-size:20px; margin-left:2px"></i></div>
+        </div>
+      `).join('');
+    }
+
+    function playTrack(i) {
+      currentIndex = i;
+      const t = playlist[i];
+      player.loadVideoById(t.id);
+      document.getElementById('nowThumb').src = t.thumb;
+      document.getElementById('nowTitle').textContent = t.title;
+      document.getElementById('nowArtist').textContent = t.artist;
+      document.getElementById('playIcon').className = 'fas fa-pause-circle';
+    }
+
+    function playPause() {
+      if (player.getPlayerState() === 1) {
+        player.pauseVideo();
+        document.getElementById('playIcon').className = 'fas fa-play-circle';
+      } else {
+        player.playVideo();
+        document.getElementById('playIcon').className = 'fas fa-pause-circle';
+      }
+    }
+
+    function nextTrack() { if (playlist.length) playTrack((currentIndex + 1) % playlist.length); }
+    function prevTrack() { if (playlist.length) playTrack((currentIndex - 1 + playlist.length) % playlist.length); }
+  </script>
+</body>
+</html>

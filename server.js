@@ -1,65 +1,61 @@
 import express from "express";
 import fetch from "node-fetch";
 import path from "path";
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.static("."));
+// Serve static files
+app.use(express.static(__dirname));
 
-// Search endpoint
+// Proxy to avoid exposing API key + fix CORS
 app.get("/api/search", async (req, res) => {
-  const q = req.query.q || "";
-  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=30&q=${encodeURIComponent(q)}&key=AIzaSyAMmMh2xRotnCthmKrZut9QjVd47qQ_7_o`;
+  const q = req.query.q;
+  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}+music+official&type=video&videoCategoryId=10&maxResults=30&key=AIzaSyAMmMh2xRotnCthmKrZut9QjVd47qQ_7_o`;
+  
   try {
-    const r = await fetch(url);
-    if (!r.ok) {
-      return res.status(r.status).json({ error: "API error" });
-    }
-    const d = await r.json();
-    if (d.error) {
-      return res.status(400).json({ error: d.error.message });
-    }
-    const results = d.items ? d.items.map(i => ({
-      id: i.id.videoId,
-      title: i.snippet.title,
-      artist: i.snippet.channelTitle,
-      thumb: i.snippet.thumbnails.high?.url || i.snippet.thumbnails.medium.url
-    })) : [];
+    const response = await fetch(url);
+    const data = await response.json();
+    const results = data.items.map(item => ({
+      id: item.id.videoId,
+      title: item.snippet.title,
+      artist: item.snippet.channelTitle,
+      thumb: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium.url
+    }));
     res.json(results);
-  } catch (e) {
-    console.error("Search error:", e);
-    res.status(500).json([]);
+  } catch (err) {
+    res.status(500).json({ error: "YouTube API error" });
   }
 });
 
-// Related endpoint with fallback
-app.get("/api/related", async (req, res) => {
-  const id = req.query.videoId;
-  if (!id) return res.json([]);
-  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&relatedToVideoId=${id}&type=video&videoCategoryId=10&maxResults=20&key=AIzaSyAMmMh2xRotnCthmKrZut9QjVd47qQ_7_o`;
+// New endpoint for similar songs
+app.get("/api/similar", async (req, res) => {
+  const videoId = req.query.videoId;
+  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=30&key=AIzaSyAMmMh2xRotnCthmKrZut9QjVd47qQ_7_o&relatedToVideoId=${videoId}`;
+  
   try {
-    const r = await fetch(url);
-    if (!r.ok) {
-      return res.status(r.status).json([]);
-    }
-    const d = await r.json();
-    if (d.error) {
-      return res.status(400).json([]);
-    }
-    const results = d.items ? d.items.map(i => ({
-      id: i.id.videoId,
-      title: i.snippet.title,
-      artist: i.snippet.channelTitle,
-      thumb: i.snippet.thumbnails.high?.url || i.snippet.thumbnails.medium.url
-    })) : [];
+    const response = await fetch(url);
+    const data = await response.json();
+    const results = data.items.map(item => ({
+      id: item.id.videoId,
+      title: item.snippet.title,
+      artist: item.snippet.channelTitle,
+      thumb: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium.url
+    }));
     res.json(results);
-  } catch (e) {
-    console.error("Related error:", e);
-    res.json([]);
+  } catch (err) {
+    res.status(500).json({ error: "YouTube API error" });
   }
 });
 
-app.get("*", (req, res) => res.sendFile(path.resolve("index.html")));
+app.get("*", (req, res) => {
+  res.sendFile(path.resolve(__dirname, "index.html"));
+});
 
-app.listen(PORT, () => console.log(`OGmusic running → http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`OGmusic running → http://localhost:${PORT}`);
+});

@@ -39,8 +39,8 @@
     .progress-bar{width:100%;height:4px;background:#404040;border-radius:2px;overflow:hidden;}
     .progress-fill{height:100%;width:0%;background:var(--primary);transition:width .1s;}
     .volume{flex:1;display:flex;align-items:center;justify-content:flex-end;gap:10px;max-width:200px;}
-    /* FIX BLACK OVERLAY - THIS IS THE ONLY NEW LINE */
-    #ytplayer{position:fixed!important;left:-9999px!important;top:-9999px!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;}
+    /* FINAL FIX - NO BLACK BAR EVER */
+    #ytplayer{position:fixed!important;left:-99999px!important;top:-99999px!important;width:0!important;height:0!important;opacity:0!important;pointer-events:none!important;overflow:hidden!important;}
   </style>
 </head>
 <body>
@@ -48,14 +48,14 @@
     <div class="sidebar">
       <div class="logo">OGmusic</div>
       <div class="nav">
-        <a href="#" class="active" data-page="home"><i class="fas fa-home"></i> Home</a>
-        <a href="#" data-page="search"><i class="fas fa-search"></i> Search</a>
-        <a href="#" data-page="library"><i class="fas fa-book"></i> Your Library</a>
-        <a href="#" data-page="liked"><i class="fas fa-heart"></i> Liked Songs</a>
+        <a href="#" class="active" data-page="home">Home</a>
+        <a href="#" data-page="search">Search</a>
+        <a href="#" data-page="library">Your Library</a>
+        <a href="#" data-page="liked">Liked Songs</a>
       </div>
       <div style="margin-top:40px;padding:0 24px">
         <a href="#" style="display:flex;align-items:center;gap:12px;color:var(--text2);text-decoration:none;margin-bottom:12px">
-          <i class="fas fa-plus-square"></i> Create Playlist
+          Create Playlist
         </a>
       </div>
     </div>
@@ -84,11 +84,11 @@
 
         <div class="controls">
           <div class="control-btns">
-            <button><i class="fas fa-random"></i></button>
-            <button onclick="prevTrack()"><i class="fas fa-step-backward"></i></button>
-            <button id="playPauseBtn" onclick="playPause()"><i id="playIcon" class="fas fa-play-circle"></i></button>
-            <button onclick="nextTrack()"><i class="fas fa-step-forward"></i></button>
-            <button><i class="fas fa-redo"></i></button>
+            <button>Random</button>
+            <button onclick="prevTrack()">Previous</button>
+            <button id="playPauseBtn" onclick="playPause()">Play/Pause</button>
+            <button onclick="smartNext()">Next</button>
+            <button>Repeat</button>
           </div>
           <div style="width:100%;display:flex;align-items:center;gap:10px;font-size:12px">
             <span id="currentTime">0:00</span>
@@ -98,13 +98,14 @@
         </div>
 
         <div class="volume">
-          <i class="fas fa-volume-up"></i>
+          Volume Up
           <input type="range" min="0" max="100" value="80"/>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Hidden YouTube player -->
   <div id="ytplayer"></div>
 
   <script src="https://www.youtube.com/iframe_api"></script>
@@ -112,19 +113,6 @@
     let player, playlist = [], currentIndex = 0;
     const likedSeeds = JSON.parse(localStorage.getItem('ogmusic_likes') || '[]');
     const playedIds = new Set();
-
-    document.querySelectorAll('.nav a').forEach(a => {
-      a.addEventListener('click', e => {
-        e.preventDefault();
-        document.querySelector('.nav a.active')?.classList.remove('active');
-        a.classList.add('active');
-        document.getElementById('pageTitle').textContent = 
-          a.dataset.page === 'home' ? 'Good evening' :
-          a.dataset.page === 'search' ? 'Search' :
-          a.dataset.page === 'library' ? 'Your Library' : 'Liked Songs';
-        if (a.dataset.page !== 'search') document.getElementById('results').innerHTML = '<p style="color:#aaa;text-align:center;margin-top:100px">Coming soon</p>';
-      });
-    });
 
     function onYouTubeIframeAPIReady() {
       player = new YT.Player('ytplayer', {
@@ -134,9 +122,10 @@
       });
     }
 
+    // THIS IS THE ONLY FUNCTION THAT MATTERS
     async function smartNext() {
       const current = playlist[currentIndex];
-      if (!current) return nextTrack();
+      if (!current) return;
 
       const seedId = likedSeeds.length > 0 
         ? likedSeeds[Math.floor(Math.random() * likedSeeds.length)]
@@ -144,32 +133,37 @@
 
       let candidates = [];
 
+      // First try YouTube's real related videos
       try {
-        const res = await fetch(`/api/related?videoId=${seedId}&t=${Date.now()}`);
-        if (res.ok) candidates = (await res.json()).filter(s => !playedIds.has(s.id));
-      } catch {}
+        const res = await fetch(`/api/related?videoId=${seedId}&_=${Date.now()}`);
+        if (res.ok) {
+          const data = await res.json();
+          candidates = data.filter(s => !playedIds.has(s.id));
+        }
+      } catch (e) {}
 
-      if (candidates.length < 3 && current) {
-        const artist = current.artist.replace(' - Topic','').replace('VEVO','').trim();
-        const q = `${artist} official audio similar`;
+      // Fallback: search by artist
+      if (candidates.length === 0) {
+        const artist = current.artist.replace(/ - Topic|VEVO/gi, '').trim();
         try {
-          const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&t=${Date.now()}`);
+          const res = await fetch(`/api/search?q=${encodeURIComponent(artist + " official audio")}&_=${Date.now()}`);
           if (res.ok) {
-            const more = await res.json();
-            candidates.push(...more.filter(s => !playedIds.has(s.id)));
+            const data = await res.json();
+            candidates = data.filter(s => !playedIds.has(s.id) && s.id !== current.id);
           }
-        } catch {}
+        } catch (e) {}
       }
 
       if (candidates.length > 0) {
-        const next = candidates[Math.floor(Math.random() * candidates.length)];
-        playlist.push(next);
-        playedIds.add(next.id);
+        const nextSong = candidates[Math.floor(Math.random() * candidates.length)];
+        playlist.push(nextSong);
+        playedIds.add(nextSong.id);
         currentIndex = playlist.length - 1;
-        playCurrent();
       } else {
-        nextTrack();
+        // Last resort: just go forward
+        currentIndex = (currentIndex + 1) % playlist.length || 0;
       }
+      playCurrent();
     }
 
     function search() {
@@ -192,7 +186,7 @@
           <img src="${t.thumb}" alt="">
           <h3>${t.title}</h3>
           <p>${t.artist}</p>
-          <div class="play-btn"><i class="fas fa-play" style="margin-left:3px;font-size:22px"></i></div>
+          <div class="play-btn">Play</div>
         </div>
       `).join('');
     }
@@ -235,9 +229,12 @@
       }
     }
 
-    function nextTrack() { currentIndex = (currentIndex + 1) % playlist.length || 0; playCurrent(); }
-    function prevTrack() { currentIndex = (currentIndex - 1 + playlist.length) % playlist.length; playCurrent(); }
+    function prevTrack() {
+      currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
+      playCurrent();
+    }
 
+    // Progress bar
     setInterval(() => {
       if (player?.getCurrentTime) {
         const c = player.getCurrentTime() || 0;

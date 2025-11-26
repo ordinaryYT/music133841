@@ -11,16 +11,11 @@
     body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;overflow:hidden;}
     .sidebar{width:240px;background:var(--sidebar);padding:20px 0;flex-shrink:0;}
     .logo{padding:0 24px;font-size:28px;font-weight:900;color:var(--primary);margin-bottom:40px;}
-    .nav{padding:0 16px;}
-    .nav a{display:flex;align-items:center;gap:16px;padding:12px 8px;color:var(--text2);text-decoration:none;border-radius:4px;margin-bottom:4px;font-weight:600;}
+    .nav a{display:flex;align-items:center;gap:16px;padding:12px 20px;color:var(--text2);text-decoration:none;border-radius:4px;margin:4px 12px;font-weight:600;}
     .nav a:hover,.nav a.active{background:var(--hover);color:white;}
-    .nav i{width:24px;text-align:center;}
-    .playlists{margin-top:40px;padding:0 24px;}
-    .playlists a{display:flex;align-items:center;gap:12px;color:var(--text2);text-decoration:none;margin-bottom:12px;font-size:14px;}
     .main{flex:1;display:flex;flex-direction:column;background:linear-gradient(180deg,#1f1f1f,var(--bg) 30%);}
     .topbar{height:64px;background:rgba(0,0,0,0.7);backdrop-filter:blur(20px);padding:0 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
     .search-input{background:#242424;border-radius:30px;padding:10px 16px;color:white;border:none;width:380px;font-size:15px;}
-    .search-input::placeholder {color:#a0a0a0;}
     .content{flex:1;padding:32px 24px;overflow-y:auto;}
     h1{font-size:48px;margin-bottom:32px;}
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:24px;}
@@ -29,7 +24,7 @@
     .card img{width:100%;border-radius:6px;margin-bottom:12px;}
     .card h3{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .card p{font-size:13px;color:var(--text2);}
-    .play-btn{width:50px;height:50px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(29,185,84,.5);position:absolute;bottom:16px;right:16px;opacity:0;transition:.3s;}
+    .play-btn{width:50px;height:50px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(29,185,84,.5);position:absolute;bottom:70px;right:16px;opacity:0;transition:.3s;}
     .card:hover .play-btn{opacity:1;transform:translateY(-10px);}
     .player{height:90px;background:#181818;border-top:1px solid #282828;display:flex;align-items:center;padding:0 16px;gap:24px;}
     .now-playing{display:flex;align-items:center;gap:14px;min-width:0;flex:1;}
@@ -41,9 +36,10 @@
     .control-btns button{background:none;border:none;color:white;font-size:18px;cursor:pointer;}
     #playPauseBtn{font-size:32px !important;}
     .progress-bar{width:100%;height:4px;background:#404040;border-radius:2px;overflow:hidden;}
-    .progress-fill{height:100%;width:0%;background:var(--primary);transition:width .1s;}
+    .progress-fill{height:100%;width:0%;background:var(--primary);}
     .volume{flex:1;display:flex;align-items:center;justify-content:flex-end;gap:10px;max-width:200px;}
-    #ytplayer{display:none !important; width:0 !important; height:0 !important; opacity:0 !important; position:absolute !important; left:-9999px !important;}
+    /* CRITICAL: Kill any black overlay */
+    #ytplayer{width:1px!important;height:1px!important;opacity:0!important;position:fixed!important;left:-9999px!important;top:-9999px!important;}
   </style>
 </head>
 <body>
@@ -51,13 +47,15 @@
     <div class="sidebar">
       <div class="logo">OGmusic</div>
       <div class="nav">
-        <a href="#" class="active" data-page="home"><i class="fas fa-home"></i> Home</a>
-        <a href="#" data-page="search"><i class="fas fa-search"></i> Search</a>
-        <a href="#" data-page="library"><i class="fas fa-book"></i> Your Library</a>
-        <a href="#" data-page="liked"><i class="fas fa-heart"></i> Liked Songs</a>
+        <a href="#" class="active" data-page="home">Home</a>
+        <a href="#" data-page="search">Search</a>
+        <a href="#" data-page="library">Your Library</a>
+        <a href="#" data-page="liked">Liked Songs</a>
       </div>
-      <div class="playlists">
-        <a href="#"><i class="fas fa-plus-square"></i> Create Playlist</a>
+      <div style="margin-top:40px;padding:0 24px">
+        <a href="#" style="display:flex;align-items:center;gap:12px;color:var(--text2);text-decoration:none;margin-bottom:12px">
+          Create Playlist
+        </a>
       </div>
     </div>
 
@@ -85,11 +83,11 @@
 
         <div class="controls">
           <div class="control-btns">
-            <button><i class="fas fa-random"></i></button>
-            <button onclick="prevTrack()"><i class="fas fa-step-backward"></i></button>
-            <button id="playPauseBtn" onclick="playPause()"><i id="playIcon" class="fas fa-play-circle"></i></button>
-            <button onclick="nextTrack()"><i class="fas fa-step-forward"></i></button>
-            <button><i class="fas fa-redo"></i></button>
+            <button>Random</button>
+            <button onclick="prevTrack()">Previous</button>
+            <button id="playPauseBtn" onclick="playPause()">Play/Pause</button>
+            <button onclick="nextTrack()">Next</button>
+            <button>Repeat</button>
           </div>
           <div style="width:100%;display:flex;align-items:center;gap:10px;font-size:12px">
             <span id="currentTime">0:00</span>
@@ -99,122 +97,91 @@
         </div>
 
         <div class="volume">
-          <i class="fas fa-volume-up"></i>
+          Volume Up
           <input type="range" min="0" max="100" value="80"/>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Hidden player - absolutely invisible -->
   <div id="ytplayer"></div>
 
   <script src="https://www.youtube.com/iframe_api"></script>
   <script>
     let player, playlist = [], currentIndex = 0;
-    const likedSeeds = JSON.parse(localStorage.getItem('likedSeeds') || '[]'); // Persist likes
-
-    // Save likes on change
-    function saveLikes() {
-      localStorage.setItem('likedSeeds', JSON.stringify(likedSeeds));
-    }
-
-    // Navigation
-    document.querySelectorAll('.nav a').forEach(a => {
-      a.addEventListener('click', e => {
-        e.preventDefault();
-        document.querySelector('.nav a.active')?.classList.remove('active');
-        a.classList.add('active');
-        document.getElementById('pageTitle').textContent = 
-          a.dataset.page === 'home' ? 'Good evening' :
-          a.dataset.page === 'search' ? 'Search' :
-          a.dataset.page === 'library' ? 'Your Library' : 'Liked Songs';
-        if (a.dataset.page !== 'search') document.getElementById('results').innerHTML = '<p style="color:#aaa;text-align:center;margin-top:100px">Coming soon</p>';
-      });
-    });
+    const playedIds = new Set(); // Prevent duplicates
+    const likedSeeds = JSON.parse(localStorage.getItem('ogmusic_likes') || '[]');
 
     function onYouTubeIframeAPIReady() {
       player = new YT.Player('ytplayer', {
-        height: '0', width: '0',
-        playerVars: { autoplay: 1, controls: 0, rel: 0, fs: 0 },
-        events: { 'onReady': () => {}, 'onStateChange': onPlayerStateChange }
+        height: '1', width: '1',
+        playerVars: { autoplay: 1, controls: 0, rel: 0, fs: 0, iv_load_policy: 3 },
+        events: { 'onReady': () => {}, 'onStateChange': e => { if (e.data === 0) smartNext(); }}
       });
     }
 
-    async function onPlayerStateChange(e) {
-      if (e.data === 0) { // ended → smart next
-        await fetchSimilarAndPlay();
-      }
-    }
+    async function smartNext() {
+      const current = playlist[currentIndex];
+      let candidates = [];
 
-    async function fetchSimilarAndPlay() {
-      let seedId = likedSeeds.length > 0 ? likedSeeds[Math.floor(Math.random() * likedSeeds.length)] : playlist[currentIndex]?.id;
-      if (!seedId) return nextTrack(); // Fallback if no seed
-
-      let similarSongs = [];
-      try {
-        // Try YouTube related first
-        const res = await fetch(`/api/related?videoId=${seedId}`);
-        if (res.ok) {
-          similarSongs = await res.json();
-        }
-      } catch (e) {
-        console.log('Related API failed, using search fallback');
+      // 1. Try YouTube's official related videos
+      if (current) {
+        try {
+          const res = await fetch(`/api/related?videoId=${current.id}`);
+          if (res.ok) candidates = await res.json();
+        } catch {}
       }
 
-      // Fallback: Search for similar based on current artist/genre
-      if (similarSongs.length === 0) {
-        const current = playlist[currentIndex];
-        if (current) {
-          const artist = current.artist.toLowerCase();
-          const genre = extractGenre(current.title.toLowerCase()) || 'music';
-          const fallbackQuery = `${artist} ${genre} official similar`;
-          const res = await fetch(`/api/search?q=${encodeURIComponent(fallbackQuery)}`);
+      // 2. Fallback: search by artist + "similar"
+      if (candidates.length < 3 && current) {
+        const artist = current.artist.split(' - ')[0].split(' VEVO')[0];
+        const q = `${artist} official audio similar songs`;
+        try {
+          const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
           if (res.ok) {
-            similarSongs = await res.json();
-            // Filter out duplicates
-            similarSongs = similarSongs.filter(s => s.id !== current.id);
+            const more = await res.json();
+            candidates.push(...more);
           }
-        }
+        } catch {}
       }
 
-      if (similarSongs.length > 0) {
-        const nextSong = similarSongs[Math.floor(Math.random() * Math.min(5, similarSongs.length))];
-        playlist.push(nextSong);
+      // Filter out already played
+      candidates = candidates.filter(s => !playedIds.has(s.id));
+
+      if (candidates.length > 0) {
+        const next = candidates[Math.floor(Math.random() * Math.min(8, candidates.length))];
+        playlist.push(next);
+        playedIds.add(next.id);
         currentIndex = playlist.length - 1;
         playCurrent();
       } else {
-        nextTrack(); // Ultimate fallback
+        // Ultimate fallback: just go to next in list
+        nextTrack();
       }
-    }
-
-    function extractGenre(title) {
-      if (title.includes('pop')) return 'pop';
-      if (title.includes('rock')) return 'rock';
-      if (title.includes('hip hop') || title.includes('rap')) return 'hip hop';
-      if (title.includes('edm') || title.includes('electronic')) return 'edm';
-      if (title.includes('country')) return 'country';
-      return 'songs'; // Default
     }
 
     function search() {
       const q = document.getElementById('searchInput').value.trim();
       if (!q) return;
+      playedIds.clear();
       fetch(`/api/search?q=${encodeURIComponent(q)}`)
         .then(r => r.json())
         .then(data => {
           playlist = data;
           currentIndex = 0;
+          data.forEach(t => playedIds.add(t.id));
           displayResults();
-        }).catch(e => console.error('Search failed:', e));
+        });
     }
 
     function displayResults() {
-      document.getElementById('results').innerHTML = playlist.map((t,i) => `
+      document.getElementById('results').innerHTML = playlist.slice(0, 50).map((t,i) => `
         <div class="card" onclick="playTrack(${i})">
           <img src="${t.thumb}" alt="">
           <h3>${t.title}</h3>
           <p>${t.artist}</p>
-          <div class="play-btn"><i class="fas fa-play" style="margin-left:3px;font-size:22px"></i></div>
+          <div class="play-btn">Play</div>
         </div>
       `).join('');
     }
@@ -236,29 +203,27 @@
     }
 
     function toggleLike() {
-      const current = playlist[currentIndex];
-      if (!current) return;
-      const idx = likedSeeds.indexOf(current.id);
-      if (idx === -1) {
-        likedSeeds.push(current.id);
+      const id = playlist[currentIndex]?.id;
+      if (!id) return;
+      const i = likedSeeds.indexOf(id);
+      if (i === -1) {
+        likedSeeds.push(id);
         document.getElementById('likeBtn').className = 'fas fa-heart';
       } else {
-        likedSeeds.splice(idx, 1);
+        likedSeeds.splice(i, 1);
         document.getElementById('likeBtn').className = 'far fa-heart';
       }
-      saveLikes();
+      localStorage.setItem('ogmusic_likes', JSON.stringify(likedSeeds));
     }
 
     function updateLikeButton() {
-      const current = playlist[currentIndex];
-      document.getElementById('likeBtn').className = 
-        current && likedSeeds.includes(current.id) ? 'fas fa-heart' : 'far fa-heart';
+      const id = playlist[currentIndex]?.id;
+      document.getElementById('likeBtn').className = id && likedSeeds.includes(id) ? 'fas fa-heart' : 'far fa-heart';
     }
 
     function playPause() {
       if (!player) return;
-      const state = player.getPlayerState();
-      if (state === 1) {
+      if (player.getPlayerState() === 1) {
         player.pauseVideo();
         document.getElementById('playIcon').className = 'fas fa-play-circle';
       } else {
@@ -267,33 +232,23 @@
       }
     }
 
-    function nextTrack() { 
-      if (playlist.length === 0) return;
-      currentIndex = (currentIndex + 1) % playlist.length;
-      playCurrent();
-    }
+    function nextTrack() { currentIndex = (currentIndex + 1) % playlist.length || 0; playCurrent(); }
+    function prevTrack() { currentIndex = (currentIndex - 1 + playlist.length) % playlist.length; playCurrent(); }
 
-    function prevTrack() { 
-      if (playlist.length === 0) return;
-      currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
-      playCurrent();
-    }
-
-    // Progress updates
     setInterval(() => {
-      if (player && player.getCurrentTime) {
-        const cur = player.getCurrentTime() || 0;
-        const dur = player.getDuration() || 0;
-        document.getElementById('progressFill').style.width = dur ? (cur/dur)*100 + '%' : '0%';
-        document.getElementById('currentTime').textContent = formatTime(cur);
-        document.getElementById('duration').textContent = formatTime(dur);
+      if (player?.getCurrentTime) {
+        const c = player.getCurrentTime() || 0;
+        const d = player.getDuration() || 0;
+        document.getElementById('progressFill').style.width = d ? (c/d)*100 + '%' : '0';
+        document.getElementById('currentTime').textContent = formatTime(c);
+        document.getElementById('duration').textContent = formatTime(d);
       }
-    }, 1000);
+    }, 500);
 
     function formatTime(s) {
-      const m = Math.floor(s / 60);
-      const ss = Math.floor(s % 60);
-      return `${m}:${ss.toString().padStart(2, '0')}`;
+      const m = Math.floor(s/60);
+      const ss = Math.floor(s%60);
+      return `${m}:${ss.toString().padStart(2,'0')}`;
     }
   </script>
 </body>

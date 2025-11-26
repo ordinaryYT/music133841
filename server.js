@@ -15,7 +15,7 @@ app.use(express.static(__dirname));
 // Proxy to avoid exposing API key + fix CORS
 app.get("/api/search", async (req, res) => {
   const q = req.query.q;
-  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}+music+official&type=video&videoCategoryId=10&maxResults=30&key=AIzaSyAMmMh2xRotnCthmKrZut9QjVd47qQ_7_o`;
+  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}+music+official&type=video&videoCategoryId=10&maxResults=30&key=AIzaSyCCnpDb4LwfeEZfRFFBGUvOFVZeTQMGhMc`;
   
   try {
     const response = await fetch(url);
@@ -35,7 +35,7 @@ app.get("/api/search", async (req, res) => {
 // New endpoint for similar songs
 app.get("/api/similar", async (req, res) => {
   const videoId = req.query.videoId;
-  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=30&key=AIzaSyAMmMh2xRotnCthmKrZut9QjVd47qQ_7_o&relatedToVideoId=${videoId}`;
+  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=30&key=AIzaSyCCnpDb4LwfeEZfRFFBGUvOFVZeTQMGhMc&relatedToVideoId=${videoId}`;
   
   try {
     const response = await fetch(url);

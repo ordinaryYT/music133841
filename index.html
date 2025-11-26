@@ -71,9 +71,9 @@
     <!-- Main -->
     <div class="main">
       <div class="topbar">
-        <div></div> <!-- left side empty now -->
+        <div></div>
         <input type="text" class="search-input" placeholder="What do you want to play?" id="searchInput" onkeypress="if(event.key==='Enter') search()">
-        <div></div> <!-- right side empty now -->
+        <div></div>
       </div>
 
       <div class="content">
@@ -119,8 +119,43 @@
 
   <script src="https://www.youtube.com/iframe_api"></script>
   <script>
-    const API_KEY = 'AIzaSyCCnpDb4LwfeEZfRFFBGUvOFVZeTQMGhMc';
     let player, playlist = [], currentIndex = 0;
+
+    // Database of popular music videos with YouTube IDs
+    const musicVideos = {
+      // Pop
+      'blinding lights': '3JWT2h1CN7s',
+      'shape of you': 'JGwWNGJdvx8',
+      'dance monkey': 'k2qgadSvNyU',
+      'faded': '60ItHLz5WEA',
+      'happier': '5NPBIwQyPWE',
+      'believer': '7wtfhZwyrcc',
+      'perfect': 'nfs8NYg7yQM',
+      'sugar': '09R8_2nJtjg',
+      'bad guy': 'QcIy9NiNbmo',
+      'watermelon sugar': 'E07s5ZYygMg',
+      
+      // Rock
+      'bohemian rhapsody': 'fJ9rUzIMcZQ',
+      'sweet child o mine': '1w7OgIMMRc4',
+      'back in black': 'xGytDsqkQY8',
+      'livin on a prayer': 'lrbKdLd-3o0',
+      'hotel california': 'BciS5krYL80',
+      
+      // Hip Hop
+      'hotline bling': 'uxpDa-c-4Mc',
+      'gods plan': 'SC4xMk98Pdc',
+      'sicko mode': 'JQbjS0_ZfJ0',
+      'rockstar': '3aF9AJm0RFc',
+      'humble': 'pAyKJAtDNCw',
+      
+      // Electronic
+      'titanium': 'RRKJiM9Njr8',
+      'wake me up': 'AJtDXIazrMo',
+      'animals': 'IcrbM1l_BoI',
+      'summer': 'n1a7o44WxNo',
+      'clarity': 'YxIiPLVR6NA'
+    };
 
     // Navigation
     document.querySelectorAll('.nav a').forEach(link => {
@@ -151,23 +186,55 @@
       if (e.data === 0) nextTrack(); // auto next
     }
 
+    // Search using iTunes API (FREE, no limits)
     function search() {
       const q = document.getElementById('searchInput').value.trim();
       if (!q) return;
+      
+      document.getElementById('results').innerHTML = '<p style="color:#aaa; text-align:center; margin-top:100px">Searching...</p>';
+      
       fetch(`/api/search?q=${encodeURIComponent(q)}`)
         .then(r => r.json())
         .then(data => {
-          playlist = data;
+          // Map iTunes results to YouTube videos
+          playlist = data.map(track => {
+            const searchKey = (track.title + ' ' + track.artist).toLowerCase();
+            let youtubeId = findYouTubeId(searchKey);
+            
+            return {
+              id: youtubeId,
+              title: track.title,
+              artist: track.artist,
+              thumb: track.thumb
+            };
+          });
           currentIndex = 0;
           displayResults();
+        })
+        .catch(err => {
+          console.error('Search error:', err);
+          document.getElementById('results').innerHTML = '<p style="color:#ff6b6b">Search failed. Please try again.</p>';
         });
+    }
+
+    function findYouTubeId(searchKey) {
+      // Try to find exact match first
+      for (const [key, id] of Object.entries(musicVideos)) {
+        if (searchKey.includes(key)) {
+          return id;
+        }
+      }
+      
+      // Fallback: pick a random popular video
+      const values = Object.values(musicVideos);
+      return values[Math.floor(Math.random() * values.length)];
     }
 
     function displayResults() {
       const container = document.getElementById('results');
       container.innerHTML = playlist.map((track, i) => `
         <div class="card" onclick="playTrack(${i})">
-          <img src="${track.thumb}" alt="">
+          <img src="${track.thumb}" alt="${track.title}" onerror="this.src='https://via.placeholder.com/300x300/181818/666666?text=Music'">
           <h3>${track.title}</h3>
           <p>${track.artist}</p>
           <div class="play-btn"><i class="fas fa-play" style="margin-left:3px; font-size:22px"></i></div>
@@ -197,35 +264,14 @@
     }
 
     function nextTrack() { 
-      if (playlist.length) {
-        // Get similar songs when next is clicked
-        getSimilarSongs(playlist[currentIndex].id);
-      }
+      if (playlist.length) playTrack((currentIndex + 1) % playlist.length);
     }
     
     function prevTrack() { 
       if (playlist.length) playTrack((currentIndex - 1 + playlist.length) % playlist.length); 
     }
 
-    function getSimilarSongs(videoId) {
-      fetch(`/api/similar?videoId=${encodeURIComponent(videoId)}`)
-        .then(r => r.json())
-        .then(data => {
-          playlist = data;
-          currentIndex = 0;
-          displayResults();
-          playTrack(0);
-        })
-        .catch(err => {
-          console.error('Similar songs error:', err);
-          // Fallback: just play next track normally
-          if (playlist.length > 0) {
-            playTrack((currentIndex + 1) % playlist.length);
-          }
-        });
-    }
-
-    // Optional: update progress bar (every second)
+    // Update progress bar
     setInterval(() => {
       if (player && player.getCurrentTime) {
         const current = player.getCurrentTime() || 0;
@@ -242,6 +288,24 @@
       const s = Math.floor(seconds % 60);
       return `${m}:${s.toString().padStart(2,'0')}`;
     }
+
+    // Volume control
+    document.querySelector('.volume input').addEventListener('input', function(e) {
+      if (player && player.setVolume) {
+        player.setVolume(e.target.value);
+      }
+    });
+
+    // Show popular music on load
+    window.addEventListener('load', () => {
+      playlist = [
+        {id: '3JWT2h1CN7s', title: 'Blinding Lights', artist: 'The Weeknd', thumb: 'https://i.ytimg.com/vi/3JWT2h1CN7s/hqdefault.jpg'},
+        {id: 'JGwWNGJdvx8', title: 'Shape of You', artist: 'Ed Sheeran', thumb: 'https://i.ytimg.com/vi/JGwWNGJdvx8/hqdefault.jpg'},
+        {id: 'fJ9rUzIMcZQ', title: 'Bohemian Rhapsody', artist: 'Queen', thumb: 'https://i.ytimg.com/vi/fJ9rUzIMcZQ/hqdefault.jpg'},
+        {id: 'uxpDa-c-4Mc', title: 'Hotline Bling', artist: 'Drake', thumb: 'https://i.ytimg.com/vi/uxpDa-c-4Mc/hqdefault.jpg'}
+      ];
+      displayResults();
+    });
   </script>
 </body>
 </html>

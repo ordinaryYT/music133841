@@ -163,22 +163,34 @@
     function search() {
       const q = document.getElementById('searchInput').value.trim();
       if (!q) return;
+      
+      // Show loading state
+      document.getElementById('results').innerHTML = '<p style="color:#aaa; text-align:center; margin-top:100px">Searching...</p>';
+      
       fetch(`/api/search?q=${encodeURIComponent(q)}`)
-        .then(r => r.json())
+        .then(r => {
+          if (!r.ok) throw new Error('Network response was not ok');
+          return r.json();
+        })
         .then(data => {
+          if (data.error) throw new Error(data.error);
           playlist = data;
           currentIndex = 0;
           displayResults();
         })
         .catch(err => {
           console.error('Search error:', err);
-          document.getElementById('results').innerHTML = '<p style="color:#ff6b6b">Search failed. Please try again.</p>';
+          document.getElementById('results').innerHTML = '<p style="color:#ff6b6b; text-align:center; margin-top:100px">Search failed. Please try again.</p>';
         });
     }
 
     function getSimilarSongs(videoId) {
+      console.log('Getting similar songs for:', videoId);
       fetch(`/api/similar?videoId=${encodeURIComponent(videoId)}`)
-        .then(r => r.json())
+        .then(r => {
+          if (!r.ok) throw new Error('Network response was not ok');
+          return r.json();
+        })
         .then(data => {
           if (data.error) throw new Error(data.error);
           playlist = data;
@@ -188,8 +200,10 @@
         })
         .catch(err => {
           console.error('Similar songs error:', err);
-          // Fallback: just play next track normally
-          nextTrack();
+          // Fallback: if similar songs fail, just play next track in current playlist
+          if (playlist.length > 0) {
+            playTrack((currentIndex + 1) % playlist.length);
+          }
         });
     }
 
@@ -249,6 +263,7 @@
       if (playlist[currentIndex]) {
         getSimilarSongs(playlist[currentIndex].id);
       } else {
+        // Fallback if no current track
         playTrack((currentIndex + 1) % playlist.length);
       }
     }
@@ -288,6 +303,11 @@
       if (player && player.setVolume) {
         player.setVolume(e.target.value);
       }
+    });
+
+    // Make sure the server is running - test connection on load
+    window.addEventListener('load', () => {
+      console.log('OGmusic loaded - make sure server.js is running on port 3000');
     });
   </script>
 </body>

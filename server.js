@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Serve static files
+// Serve static files (our index.html)
 app.use(express.static(__dirname));
 
 // Proxy to avoid exposing API key + fix CORS

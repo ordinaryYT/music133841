@@ -1,45 +1,54 @@
-const express = require('express');
-const cors = require('cors');
-const ytdl = require('ytdl-core');
-const yts = require('yt-search');
-const path = require('path');
+import express from "express";
+import ytdl from "ytdl-core";
+import yts from "yt-search";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(cors());
 app.use(express.static(__dirname));
 
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
-
-// SEARCH — now 100% working
-app.get('/search', async (req, res) => {
+// Search — unlimited via yt-search
+app.get("/api/search", async (req, res) => {
   const q = req.query.q;
   if (!q) return res.json([]);
 
   try {
-    const { videos } = await yts(q);
-    const results = videos.slice(0, 20).map(v => ({
+    const { videos } = await yts(q + " official music video");
+    const results = videos.slice(0, 30).map(v => ({
       id: v.videoId,
       title: v.title,
-      artist: v.author.name || "Unknown Artist",
-      thumbnail: v.thumbnail || `https://i.ytimg.com/vi/${v.videoId}/maxresdefault.jpg`
+      artist: v.author.name,
+      thumb: v.thumbnail || `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`
     }));
     res.json(results);
-  } catch (e) {
-    console.log("Search error:", e.message);
+  } catch (err) {
+    console.error(err);
     res.json([]);
   }
 });
 
-// STREAM — direct audio URL
-app.get('/stream/:id', async (req, res) => {
+// Get direct audio stream URL (no ads, instant play)
+app.get("/stream/:id", async (req, res) => {
   try {
-    const info = await ytdl.getInfo('https://youtube.com/watch?v=' + req.params.id);
-    const format = ytdl.chooseFormat(info.formats, { quality: 'highestaudio', filter: 'audioonly' });
+    const info = await ytdl.getInfo("https://youtube.com/watch?v=" + req.params.id);
+    const format = ytdl.chooseFormat(info.formats, {
+      quality: "highestaudio",
+      filter: "audioonly"
+    });
     res.json({ url: format.url });
-  } catch (e) {
-    res.status(500).json({ error: "Stream failed" });
+  } catch (err) {
+    res.status(500).json({ error: "Stream not available" });
   }
 });
 
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`OGmusic running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`OGmusic UNLIMITED → https://localhost:${PORT}`);
+});

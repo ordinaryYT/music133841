@@ -1,7 +1,7 @@
 {
   "name": "ogmusic",
   "version": "1.0.0",
-  "description": "OGmusic",
+  "description": "OGmusic - Unlimited Spotify-like YouTube Music Player",
   "main": "server.js",
   "type": "module",
   "scripts": {
@@ -10,9 +10,10 @@
   },
   "keywords": [
     "music",
-    "spotify-clone",
+    "spotify",
     "youtube",
-    "streaming"
+    "streaming",
+    "player"
   ],
   "author": "You",
   "license": "MIT",
@@ -21,6 +22,7 @@
   },
   "dependencies": {
     "express": "^4.19.2",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "yt-search": "^2.12.0"
   }
 }

@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>OGmusic</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
   <style>
     :root {
       --bg: #121212;
@@ -19,129 +18,278 @@
     body { font-family: 'Segoe UI', Arial, sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; overflow:hidden; }
     .sidebar { width:240px; background:var(--sidebar); padding:20px 0; flex-shrink:0; }
     .logo { padding:0 24px; font-size:28px; font-weight:900; color:var(--primary); margin-bottom:40px; }
+    .nav { padding:0 16px; }
     .nav a { display:flex; align-items:center; gap:16px; padding:12px 8px; color:var(--text-secondary); text-decoration:none; border-radius:4px; margin-bottom:4px; font-weight:600; }
     .nav a.active, .nav a:hover { background:#282828; color:var(--active); }
     .nav a i { font-size:20px; width:24px; text-align:center; }
+    .playlists { margin-top:40px; padding:0 24px; }
+    .playlists a { display:flex; align-items:center; gap:12px; color:var(--text-secondary); text-decoration:none; margin-bottom:12px; font-size:14px; }
     .main { flex:1; display:flex; flex-direction:column; background:linear-gradient(180deg, #1f1f1f 0%, var(--bg) 30%); }
     .topbar { height:64px; background:rgba(0,0,0,0.7); backdrop-filter:blur(20px); padding:0 24px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10; }
-    .search-input { background:#242424; border-radius:30px; padding:10px 16px; color:white; border:none; width:380px; font-size:15px; }
+    .search-input { background:#242424; border-radius:30px; padding:10px 40px 10px 16px; color:white; border:none; width:380px; font-size:15px; }
+    .search-input::placeholder { color:#a0a0a0; }
     .content { flex:1; padding:32px 24px; overflow-y:auto; }
     h1 { font-size:48px; margin-bottom:32px; }
     .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:24px; }
     .card { background:#181818; border-radius:8px; padding:16px; transition:.2s; cursor:pointer; position:relative; }
     .card:hover { background:#282828; transform:scale(1.04); }
+    .card.liked { border:2px solid var(--primary); }
     .card img { width:100%; border-radius:6px; margin-bottom:12px; }
     .card h3 { font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .card p { font-size:13px; color:var(--text-secondary); }
     .play-btn { width:50px; height:50px; background:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(29,185,84,.5); position:absolute; bottom:70px; right:16px; opacity:0; transition:.3s; }
     .card:hover .play-btn { opacity:1; transform:translateY(-10px); }
     .player { height:90px; background:#181818; border-top:1px solid #282828; display:flex; align-items:center; padding:0 16px; gap:24px; }
+    .now-playing { display:flex; align-items:center; gap:14px; min-width:0; flex:1; }
     .now-playing img { width:56px; height:56px; border-radius:4px; }
-    .progress-bar { width:100%; height:4px; background:#404040; border-radius:2px; overflow:hidden; }
-    .progress-fill { height:100%; width:0%; background:var(--primary); }
+    .now-info { min-width:0; }
+    .now-info div { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .heart { margin-left:auto; cursor:pointer; color:var(--text-secondary); transition:.2s; }
+    .heart.liked { color:var(--primary); animation:heartBeat .6s; }
+    @keyframes heartBeat { 0%,100%{transform:scale(1);} 50%{transform:scale(1.3);} }
+    .controls { flex:2; display:flex; flex-direction:column; align-items:center; gap:8px; }
+    .control-btns { display:flex; align-items:center; gap:20px; }
+    .control-btns button { background:none; border:none; color:white; font-size:18px; cursor:pointer; }
+    #playPauseBtn { font-size:32px !important; }
+    .progress-bar { width:100%; height:4px; background:#404040; border-radius:2px; overflow:hidden; cursor:pointer; }
+    .progress-fill { height:100%; width:0%; background:var(--primary); transition:width .1s; }
+    .volume { flex:1; display:flex; align-items:center; justify-content:flex-end; gap:10px; max-width:200px; }
   </style>
 </head>
 <body>
   <div style="display:flex; height:100%">
+    <!-- Sidebar -->
     <div class="sidebar">
       <div class="logo">OGmusic</div>
       <div class="nav">
-        <a href="#" class="active"><i class="fas fa-home"></i> Home</a>
-        <a href="#"><i class="fas fa-search"></i> Search</a>
-        <a href="#"><i class="fas fa-book"></i> Your Library</a>
-        <a href="#"><i class="fas fa-heart"></i> Liked Songs</a>
+        <a href="#" class="active" data-page="home"><i class="fas fa-home"></i> Home</a>
+        <a href="#" data-page="search"><i class="fas fa-search"></i> Search</a>
+        <a href="#" data-page="library"><i class="fas fa-book"></i> Your Library</a>
+        <a href="#" data-page="liked"><i class="fas fa-heart"></i> Liked Songs</a>
+      </div>
+      <div class="playlists">
+        <a href="#"><i class="fas fa-plus-square"></i> Create Playlist</a>
       </div>
     </div>
 
+    <!-- Main -->
     <div class="main">
       <div class="topbar">
         <div></div>
-        <input type="text" class="search-input" placeholder="What do you want to play?" id="searchInput">
+        <input type="text" class="search-input" placeholder="What do you want to play?" id="searchInput" />
         <div></div>
       </div>
 
       <div class="content">
-        <h1>Good evening</h1>
+        <h1 id="pageTitle">Good evening</h1>
         <div class="grid" id="results"></div>
       </div>
 
+      <!-- Player -->
       <div class="player">
         <div class="now-playing">
-          <img id="nowThumb" src="https://via.placeholder.com/56">
-          <div>
+          <img id="nowThumb" src="https://via.placeholder.com/56" alt="">
+          <div class="now-info">
             <div id="nowTitle">Select a song to play</div>
             <small id="nowArtist" style="color:#b3b3b3">OGmusic</small>
           </div>
+          <i class="far fa-heart heart" id="currentHeart" style="cursor:pointer"></i>
         </div>
-        <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px">
-          <div style="display:flex; gap:20px">
+
+        <div class="controls">
+          <div class="control-btns">
             <button><i class="fas fa-random"></i></button>
-            <button><i class="fas fa-step-backward"></i></button>
-            <button id="playPauseBtn" style="font-size:32px"><i class="fas fa-play-circle"></i></button>
-            <button><i class="fas fa-step-forward"></i></button>
+            <button onclick="prevTrack()"><i class="fas fa-step-backward"></i></button>
+            <button id="playPauseBtn" onclick="playPause()"><i id="playIcon" class="fas fa-play-circle"></i></button>
+            <button onclick="nextTrack()"><i class="fas fa-step-forward"></i></button>
             <button><i class="fas fa-redo"></i></button>
           </div>
           <div style="width:100%; display:flex; align-items:center; gap:10px; font-size:12px">
-            <span>0:00</span>
-            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-            <span>0:00</span>
+            <span id="currentTime">0:00</span>
+            <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+            <span id="duration">0:00</span>
           </div>
         </div>
-        <div style="flex:1"></div>
+
+        <div class="volume">
+          <i class="fas fa-volume-up"></i>
+          <input type="range" min="0" max="100" value="80" onchange="if(player) player.setVolume(this.value)"/>
+        </div>
       </div>
     </div>
   </div>
 
+  <div id="ytplayer" style="position:fixed; opacity:0; pointer-events:none"></div>
+
+  <script src="https://www.youtube.com/iframe_api"></script>
   <script>
-    let sound = null;
-    let playlist = [], currentIndex = 0;
+    let player, playlist = [], currentIndex = 0, likedSongs = JSON.parse(localStorage.getItem('likedSongs') || '{}');
 
-    document.getElementById('searchInput').addEventListener('input', async (e) => {
-      const q = e.target.value.trim();
-      if (q.length < 2) { document.getElementById('results').innerHTML = ''; return; }
+    // Toggle like
+    function toggleLike(trackId, el) {
+      likedSongs[trackId] = !likedSongs[trackId];
+      localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
+      el.classList.toggle('liked', likedSongs[trackId]);
+      el.innerHTML = likedSongs[trackId] ? '<i class="fas fa-heart"></i>' : '<i class="far fa-heart"></i>';
+    }
 
-      const res = await fetch(`/api/search?q=${q}`);
-      const tracks = await res.json();
-      playlist = tracks;
+    // Update current heart
+    function updateCurrentHeart(trackId) {
+      const heart = document.getElementById('currentHeart');
+      heart.onclick = () => toggleLike(trackId, heart);
+      if (likedSongs[trackId]) {
+        heart.classList.add('liked');
+        heart.innerHTML = '<i class="fas fa-heart"></i>';
+      } else {
+        heart.classList.remove('liked');
+        heart.innerHTML = '<i class="far fa-heart"></i>';
+      }
+    }
 
-      document.getElementById('results').innerHTML = tracks.map((t, i) => `
-        <div class="card" onclick="playTrack(${i})">
-          <img src="${t.thumb}" alt="">
-          <h3>${t.title}</h3>
-          <p>${t.artist}</p>
-          <div class="play-btn"><i class="fas fa-play" style="margin-left:3px"></i></div>
-        </div>
-      `).join('');
+    // Navigation
+    document.querySelectorAll('.nav a').forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        document.querySelector('.nav a.active')?.classList.remove('active');
+        link.classList.add('active');
+        const page = link.dataset.page;
+        const titleEl = document.getElementById('pageTitle');
+        titleEl.textContent = 
+          page === 'home' ? 'Good evening' :
+          page === 'search' ? 'Search' :
+          page === 'library' ? 'Your Library' :
+          'Liked Songs';
+        if (page === 'liked') showLiked();
+        else if (page !== 'search') document.getElementById('results').innerHTML = '<p style="color:#aaa; text-align:center; margin-top:100px">Coming soon</p>';
+      });
     });
 
-    window.playTrack = async (i) => {
-      currentIndex = i;
-      const t = playlist[i];
-      if (sound) sound.unload();
+    // Search with debounce (Deezer → YouTube bridge)
+    let searchTimeout;
+    document.getElementById('searchInput').addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(search, 500);
+    });
+    async function search() {
+      const q = document.getElementById('searchInput').value.trim();
+      if (!q) return;
+      
+      // Step 1: Search Deezer for metadata
+      const deezerRes = await fetch(`/api/deezer-search?q=${encodeURIComponent(q)}`);
+      const deezerData = await deezerRes.json();
+      
+      // Step 2: Bridge to YouTube IDs (parallel for speed)
+      const ytPromises = deezerData.map(track => 
+        fetch(`/api/youtube-bridge?title=${encodeURIComponent(track.title)}&artist=${encodeURIComponent(track.artist)}`)
+          .then(r => r.json())
+          .then(ytData => ({ ...track, videoId: ytData.videoId }))
+          .catch(() => ({ ...track, videoId: null })) // Skip if no video
+      );
+      
+      const fullResults = (await Promise.all(ytPromises)).filter(track => track.videoId); // Only with videos
+      
+      playlist = fullResults;
+      currentIndex = 0;
+      displayResults();
+    }
 
-      const stream = await fetch(`/stream/${t.id}`);
-      const { url } = await stream.json();
+    function displayResults(tracks = playlist) {
+      const container = document.getElementById('results');
+      container.innerHTML = tracks.map((track, i) => {
+        const isLiked = likedSongs[track.deezerId]; // Use Deezer ID for likes
+        return `
+          <div class="card ${isLiked ? 'liked' : ''}" onclick="playTrack(${i})">
+            <img src="${track.thumb}" alt="">
+            <h3>${track.title}</h3>
+            <p>${track.artist} • ${track.album}</p>
+            <i class="fas fa-heart heart ${isLiked ? 'liked' : ''}" style="position:absolute; top:12px; right:12px; cursor:pointer; opacity:0.7;" onclick="event.stopPropagation(); toggleLike('${track.deezerId}', this)"></i>
+            <div class="play-btn"><i class="fas fa-play" style="margin-left:3px; font-size:22px"></i></div>
+          </div>
+        `;
+      }).join('');
+    }
 
-      sound = new Howl({
-        src: [url],
-        html5: true,
-        format: ['opus', 'webm'],
-        onload: () => {
-          document.getElementById('nowThumb').src = t.thumb;
-          document.getElementById('nowTitle').textContent = t.title;
-          document.getElementById('nowArtist').textContent = t.artist;
-          document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-pause-circle"></i>';
-        }
+    function showLiked() {
+      const liked = playlist.filter(track => likedSongs[track.deezerId]);
+      if (liked.length) displayResults(liked);
+      else document.getElementById('results').innerHTML = '<p style="color:#aaa; text-align:center; margin-top:100px">No liked songs yet</p>';
+    }
+
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('ytplayer', {
+        height: '0', width: '0',
+        playerVars: { autoplay:1, controls:0, rel:0, fs:0 },
+        events: { 'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange }
       });
-      sound.play();
-    };
+    }
 
-    document.getElementById('playPauseBtn').onclick = () => {
-      if (!sound) return;
-      sound.playing() ? sound.pause() : sound.play();
-      document.getElementById('playPauseBtn').innerHTML = 
-        sound.playing() ? '<i class="fas fa-pause-circle"></i>' : '<i class="fas fa-play-circle"></i>';
-    };
+    function onPlayerReady() { }
+    function onPlayerStateChange(e) {
+      if (e.data === 0) nextTrack(); // Auto-next on end
+    }
+
+    function playTrack(i) {
+      currentIndex = i;
+      const track = playlist[i];
+      if (!track.videoId) return; // Skip if no video
+      
+      player.loadVideoById(track.videoId);
+      document.getElementById('nowThumb').src = track.thumb;
+      document.getElementById('nowTitle').textContent = track.title;
+      document.getElementById('nowArtist').textContent = track.artist;
+      document.getElementById('playIcon').className = 'fas fa-pause-circle';
+      updateCurrentHeart(track.deezerId);
+    }
+
+    function playPause() {
+      if (!player) return;
+      if (player.getPlayerState() === 1) {
+        player.pauseVideo();
+        document.getElementById('playIcon').className = 'fas fa-play-circle';
+      } else {
+        player.playVideo();
+        document.getElementById('playIcon').className = 'fas fa-pause-circle';
+      }
+    }
+
+    function nextTrack() {
+      if (playlist.length) {
+        // Smart: Prefer similar artist/title
+        const current = playlist[currentIndex];
+        let similar = playlist.filter((t, i) => i !== currentIndex && 
+          (t.artist.toLowerCase().includes(current.artist.split(' ')[0].toLowerCase()) ||
+           t.title.toLowerCase().includes(current.title.split(' ')[0].toLowerCase())));
+        
+        if (similar.length > 0) {
+          currentIndex = playlist.indexOf(similar[Math.floor(Math.random() * similar.length)]);
+        } else {
+          currentIndex = (currentIndex + 1) % playlist.length;
+        }
+        playTrack(currentIndex);
+      }
+    }
+
+    function prevTrack() {
+      if (playlist.length) playTrack((currentIndex - 1 + playlist.length) % playlist.length);
+    }
+
+    // Progress bar update
+    setInterval(() => {
+      if (player && player.getCurrentTime) {
+        const current = player.getCurrentTime() || 0;
+        const duration = player.getDuration() || 0;
+        const percent = duration ? (current / duration) * 100 : 0;
+        document.getElementById('progressFill').style.width = percent + '%';
+        document.getElementById('currentTime').textContent = formatTime(current);
+        document.getElementById('duration').textContent = formatTime(duration);
+      }
+    }, 1000);
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = Math.floor(seconds % 60);
+      return `${m}:${s.toString().padStart(2,'0')}`;
+    }
   </script>
 </body>
 </html>

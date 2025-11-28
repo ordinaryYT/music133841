@@ -1,28 +1,13 @@
 {
   "name": "ogmusic",
   "version": "1.0.0",
-  "description": "OGmusic - Unlimited Spotify-like YouTube Music Player",
-  "main": "server.js",
   "type": "module",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js"
   },
-  "keywords": [
-    "music",
-    "spotify",
-    "youtube",
-    "streaming",
-    "player"
-  ],
-  "author": "You",
-  "license": "MIT",
-  "engines": {
-    "node": ">=18"
-  },
   "dependencies": {
     "express": "^4.19.2",
-    "node-fetch": "^3.3.2",
-    "ytsearch.js": "^1.4.0"
+    "node-fetch": "^3.3.2"
   }
 }

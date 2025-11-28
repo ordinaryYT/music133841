@@ -164,7 +164,7 @@
       });
     });
 
-    // Search with debounce (Deezer → YouTube bridge)
+    // Search with debounce (Spotify → YouTube bridge)
     let searchTimeout;
     document.getElementById('searchInput').addEventListener('input', () => {
       clearTimeout(searchTimeout);
@@ -174,19 +174,19 @@
       const q = document.getElementById('searchInput').value.trim();
       if (!q) return;
       
-      // Step 1: Search Deezer for metadata
-      const deezerRes = await fetch(`/api/deezer-search?q=${encodeURIComponent(q)}`);
-      const deezerData = await deezerRes.json();
+      // Step 1: Search Spotify for metadata
+      const spotifyRes = await fetch(`/api/spotify-search?q=${encodeURIComponent(q)}`);
+      const spotifyData = await spotifyRes.json();
       
-      // Step 2: Bridge to YouTube IDs (parallel for speed)
-      const ytPromises = deezerData.map(track => 
+      // Step 2: Bridge to YouTube IDs (parallel)
+      const ytPromises = spotifyData.map(track => 
         fetch(`/api/youtube-bridge?title=${encodeURIComponent(track.title)}&artist=${encodeURIComponent(track.artist)}`)
           .then(r => r.json())
           .then(ytData => ({ ...track, videoId: ytData.videoId }))
-          .catch(() => ({ ...track, videoId: null })) // Skip if no video
+          .catch(() => ({ ...track, videoId: null }))
       );
       
-      const fullResults = (await Promise.all(ytPromises)).filter(track => track.videoId); // Only with videos
+      const fullResults = (await Promise.all(ytPromises)).filter(track => track.videoId);
       
       playlist = fullResults;
       currentIndex = 0;
@@ -196,13 +196,13 @@
     function displayResults(tracks = playlist) {
       const container = document.getElementById('results');
       container.innerHTML = tracks.map((track, i) => {
-        const isLiked = likedSongs[track.deezerId]; // Use Deezer ID for likes
+        const isLiked = likedSongs[track.spotifyId];
         return `
           <div class="card ${isLiked ? 'liked' : ''}" onclick="playTrack(${i})">
             <img src="${track.thumb}" alt="">
             <h3>${track.title}</h3>
             <p>${track.artist} • ${track.album}</p>
-            <i class="fas fa-heart heart ${isLiked ? 'liked' : ''}" style="position:absolute; top:12px; right:12px; cursor:pointer; opacity:0.7;" onclick="event.stopPropagation(); toggleLike('${track.deezerId}', this)"></i>
+            <i class="fas fa-heart heart ${isLiked ? 'liked' : ''}" style="position:absolute; top:12px; right:12px; cursor:pointer; opacity:0.7;" onclick="event.stopPropagation(); toggleLike('${track.spotifyId}', this)"></i>
             <div class="play-btn"><i class="fas fa-play" style="margin-left:3px; font-size:22px"></i></div>
           </div>
         `;
@@ -210,7 +210,7 @@
     }
 
     function showLiked() {
-      const liked = playlist.filter(track => likedSongs[track.deezerId]);
+      const liked = playlist.filter(track => likedSongs[track.spotifyId]);
       if (liked.length) displayResults(liked);
       else document.getElementById('results').innerHTML = '<p style="color:#aaa; text-align:center; margin-top:100px">No liked songs yet</p>';
     }
@@ -228,17 +228,17 @@
       if (e.data === 0) nextTrack(); // Auto-next on end
     }
 
-    function playTrack(i) {
+    async function playTrack(i) {
       currentIndex = i;
       const track = playlist[i];
-      if (!track.videoId) return; // Skip if no video
+      if (!track.videoId) return;
       
       player.loadVideoById(track.videoId);
       document.getElementById('nowThumb').src = track.thumb;
       document.getElementById('nowTitle').textContent = track.title;
       document.getElementById('nowArtist').textContent = track.artist;
       document.getElementById('playIcon').className = 'fas fa-pause-circle';
-      updateCurrentHeart(track.deezerId);
+      updateCurrentHeart(track.spotifyId);
     }
 
     function playPause() {
@@ -252,28 +252,46 @@
       }
     }
 
-    function nextTrack() {
-      if (playlist.length) {
-        // Smart: Prefer similar artist/title
-        const current = playlist[currentIndex];
-        let similar = playlist.filter((t, i) => i !== currentIndex && 
-          (t.artist.toLowerCase().includes(current.artist.split(' ')[0].toLowerCase()) ||
-           t.title.toLowerCase().includes(current.title.split(' ')[0].toLowerCase())));
-        
-        if (similar.length > 0) {
-          currentIndex = playlist.indexOf(similar[Math.floor(Math.random() * similar.length)]);
-        } else {
-          currentIndex = (currentIndex + 1) % playlist.length;
-        }
+    async function nextTrack() {
+      if (!playlist[currentIndex]?.spotifyId) {
+        currentIndex = (currentIndex + 1) % playlist.length;
         playTrack(currentIndex);
+        return;
       }
+
+      const currentSpotifyId = playlist[currentIndex].spotifyId;
+
+      // Step 1: Get 20 similar tracks from Spotify
+      const recRes = await fetch(`/api/spotify-recommend?trackId=${currentSpotifyId}`);
+      const recData = await recRes.json();
+
+      if (recData && recData.length > 0) {
+        // Pick random similar
+        const similarTrack = recData[Math.floor(Math.random() * recData.length)];
+
+        // Step 2: Bridge to YouTube
+        const ytRes = await fetch(`/api/youtube-bridge?title=${encodeURIComponent(similarTrack.title)}&artist=${encodeURIComponent(similarTrack.artist)}`);
+        const ytData = await ytRes.json();
+
+        if (ytData.videoId) {
+          const newTrack = { ...similarTrack, videoId: ytData.videoId };
+          playlist.splice(currentIndex + 1, 0, newTrack);
+          currentIndex++;
+          playTrack(currentIndex);
+          return;
+        }
+      }
+
+      // Fallback
+      currentIndex = (currentIndex + 1) % playlist.length;
+      playTrack(currentIndex);
     }
 
     function prevTrack() {
       if (playlist.length) playTrack((currentIndex - 1 + playlist.length) % playlist.length);
     }
 
-    // Progress bar update
+    // Progress bar
     setInterval(() => {
       if (player && player.getCurrentTime) {
         const current = player.getCurrentTime() || 0;

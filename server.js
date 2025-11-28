@@ -2,13 +2,21 @@ import express from "express";
 import fetch from "node-fetch";
 import path from "path";
 import fs from "fs";
+import axios from "axios";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Cache setup (for Deezer + YouTube bridge)
+// Spotify Config (REPLACE WITH YOUR CREDENTIALS from developer.spotify.com)
+const SPOTIFY_CLIENT_ID = 'YOUR_SPOTIFY_CLIENT_ID';
+const SPOTIFY_CLIENT_SECRET = 'YOUR_SPOTIFY_CLIENT_SECRET';
+const SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token';
+
+// Cache setup
 const CACHE_FILE = './cache.json';
 let cache = {};
+let spotifyToken = null;
+let tokenExpiry = 0;
 
 function loadCache() {
   try {
@@ -24,31 +32,45 @@ function saveCache() {
 
 loadCache();
 
+// Get/Refresh Spotify Token (cached for 1h)
+async function getSpotifyToken() {
+  if (spotifyToken && Date.now() < tokenExpiry) return spotifyToken;
+
+  const auth = Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64');
+  const res = await axios.post(SPOTIFY_TOKEN_URL, 'grant_type=client_credentials', {
+    headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' }
+  });
+  spotifyToken = res.data.access_token;
+  tokenExpiry = Date.now() + (res.data.expires_in * 1000) - 60000; // Refresh 1min early
+  return spotifyToken;
+}
+
 // Serve static files
 app.use(express.static(path.dirname(new URL(import.meta.url).pathname)));
 
-// Deezer Search (free, no quota – metadata only)
-app.get("/api/deezer-search", async (req, res) => {
+// Spotify Search (rich metadata)
+app.get("/api/spotify-search", async (req, res) => {
   const q = req.query.q;
-  const cacheKey = `deezer_${q.toLowerCase()}`;
+  const cacheKey = `spotify_search_${q.toLowerCase()}`;
   
   if (cache[cacheKey] && Date.now() - cache[cacheKey].timestamp < 24 * 60 * 60 * 1000) {
     return res.json(cache[cacheKey].results);
   }
 
-  const url = `https://api.deezer.com/search/track?q=${encodeURIComponent(q)}&limit=20`;
+  const token = await getSpotifyToken();
+  const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=20`;
   
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
     const data = await response.json();
-    const results = data.data.map(track => ({
-      deezerId: track.id,
-      title: track.title_short || track.title,
-      artist: track.artist.name,
-      album: track.album.title,
-      thumb: track.album.cover_medium,
-      preview: track.preview, // unused, but here if needed
-      popularity: track.rank // for sorting
+    const results = data.tracks.items.map(track => ({
+      spotifyId: track.id,
+      title: track.name,
+      artist: track.artists[0].name,
+      album: track.album.name,
+      thumb: track.album.images[0]?.url || '',
+      popularity: track.popularity,
+      genres: track.artists[0].genres || [] // For smart recs
     }));
 
     cache[cacheKey] = { results, timestamp: Date.now() };
@@ -56,11 +78,45 @@ app.get("/api/deezer-search", async (req, res) => {
     
     res.json(results);
   } catch (err) {
-    res.status(500).json({ error: "Deezer search error" });
+    res.status(500).json({ error: "Spotify search error" });
   }
 });
 
-// YouTube Bridge: Get video ID for a Deezer track (cached)
+// Spotify Recommendations (for Next button)
+app.get("/api/spotify-recommend", async (req, res) => {
+  const trackId = req.query.trackId; // Seed from current track
+  const cacheKey = `spotify_rec_${trackId}`;
+  
+  if (cache[cacheKey] && Date.now() - cache[cacheKey].timestamp < 1 * 60 * 60 * 1000) { // 1h cache
+    return res.json(cache[cacheKey].results);
+  }
+
+  const token = await getSpotifyToken();
+  const url = `https://api.spotify.com/v1/recommendations?seed_tracks=${trackId}&limit=20`;
+  
+  try {
+    const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await response.json();
+    const results = data.tracks.map(track => ({
+      spotifyId: track.id,
+      title: track.name,
+      artist: track.artists[0].name,
+      album: track.album.name,
+      thumb: track.album.images[0]?.url || '',
+      popularity: track.popularity,
+      genres: track.artists[0].genres || []
+    }));
+
+    cache[cacheKey] = { results, timestamp: Date.now() };
+    saveCache();
+    
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: "Spotify recommend error" });
+  }
+});
+
+// YouTube Bridge (for playback)
 app.get("/api/youtube-bridge", async (req, res) => {
   const title = req.query.title;
   const artist = req.query.artist;
@@ -71,7 +127,6 @@ app.get("/api/youtube-bridge", async (req, res) => {
     return res.json(cache[cacheKey].videoId);
   }
 
-  // Your existing YouTube key (replace if needed)
   const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&videoCategoryId=10&maxResults=1&key=AIzaSyAMmMh2xRotnCthmKrZut9QjVd47qQ_7_o`;
   
   try {
@@ -85,26 +140,6 @@ app.get("/api/youtube-bridge", async (req, res) => {
     res.json({ videoId });
   } catch (err) {
     res.status(500).json({ error: "YouTube bridge error" });
-  }
-});
-
-// Existing YouTube search (fallback or for recommendations)
-app.get("/api/search", async (req, res) => {
-  const q = req.query.q;
-  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}+music+official&type=video&videoCategoryId=10&maxResults=10&key=AIzaSyAMmMh2xRotnCthmKrZut9QjVd47qQ_7_o`;
-  
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-    const results = data.items.map(item => ({
-      id: item.id.videoId,
-      title: item.snippet.title,
-      artist: item.snippet.channelTitle,
-      thumb: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium.url
-    }));
-    res.json(results);
-  } catch (err) {
-    res.status(500).json({ error: "YouTube API error" });
   }
 });
 

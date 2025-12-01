@@ -5,62 +5,38 @@ import path from "path";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Serve static files (front-end)
 app.use(express.static(path.dirname(new URL(import.meta.url).pathname)));
 
 //
-// SEARCH VIA PIPED (Unlimited, No API Key)
+// SEARCH WITHOUT API KEY — scrape YouTube page results
 //
 app.get("/api/search", async (req, res) => {
   const q = req.query.q;
-
-  const url = `https://piped.video/api/search?q=${encodeURIComponent(q)}&filter=videos`;
+  const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(q + " music")}`;
 
   try {
-    const response = await fetch(url);
-    const data = await response.json();
+    const html = await fetch(url).then(r => r.text());
 
-    const results = data.items.map(item => ({
-      id: item.url.split("v=")[1],
-      title: item.title,
-      artist: item.uploaderName,
-      thumb: item.thumbnail
-    }));
+    // Extract video entries
+    const matches = [...html.matchAll(/"videoId":"(.*?)".*?"title":{"runs":\[\{"text":"(.*?)"/gs)]
+      .map(m => ({
+        id: m[1],
+        title: m[2],
+        artist: "Unknown",
+        thumb: `https://img.youtube.com/vi/${m[1]}/hqdefault.jpg`
+      }));
 
-    res.json(results);
+    res.json(matches.slice(0, 25)); // return up to 25 matches
   } catch (err) {
-    console.error("Search error:", err);
-    res.status(500).json({ error: "Search provider failed" });
+    console.error(err);
+    res.json([]);
   }
 });
 
 //
-// SIMILAR SONGS (Used for next / auto-next)
+// NO need for similar endpoint — handled CLIENT-SIDE by YouTube
 //
-app.get("/api/similar", async (req, res) => {
-  const id = req.query.id;
 
-  const url = `https://piped.video/api/suggestions/${id}`;
-
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-
-    const results = data.items.map(item => ({
-      id: item.url.split("v=")[1],
-      title: item.title,
-      artist: item.uploaderName,
-      thumb: item.thumbnail
-    }));
-
-    res.json(results);
-  } catch (err) {
-    console.error("Similar error:", err);
-    res.status(500).json({ error: "Similar provider failed" });
-  }
-});
-
-// Catch-all to load front-end
 app.get("*", (req, res) => {
   res.sendFile(path.resolve(path.dirname(new URL(import.meta.url).pathname), "index.html"));
 });

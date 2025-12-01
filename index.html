@@ -54,7 +54,6 @@
 </head>
 <body>
   <div style="display:flex; height:100%">
-    <!-- Sidebar -->
     <div class="sidebar">
       <div class="logo">OGmusic</div>
       <div class="nav">
@@ -68,7 +67,6 @@
       </div>
     </div>
 
-    <!-- Main -->
     <div class="main">
       <div class="topbar">
         <div></div>
@@ -81,7 +79,6 @@
         <div class="grid" id="results"></div>
       </div>
 
-      <!-- Player -->
       <div class="player">
         <div class="now-playing">
           <img id="nowThumb" src="https://via.placeholder.com/56" alt="">
@@ -120,7 +117,9 @@
   <script src="https://www.youtube.com/iframe_api"></script>
 
   <script>
-    let player, playlist = [], currentIndex = 0;
+    let player;
+    let playlist = [];
+    let currentIndex = 0;
 
     document.querySelectorAll('.nav a').forEach(link => {
       link.addEventListener('click', e => {
@@ -141,17 +140,19 @@
     function onYouTubeIframeAPIReady() {
       player = new YT.Player('ytplayer', {
         height: '0', width: '0',
-        playerVars: { autoplay:1, controls:0, rel:0, fs:0 },
+        playerVars: { autoplay:1, controls:0, rel:1 },
         events: { onStateChange: onPlayerStateChange }
       });
     }
 
     function onPlayerStateChange(e) {
-      if (e.data === 0) nextTrack(); // auto next when song ends
+      if (e.data === 0) {
+        loadRecommendedAndPlay();
+      }
     }
 
     function search() {
-      const q = document.getElementById('searchInput').value.trim();
+      const q = document.getElementById("searchInput").value.trim();
       if (!q) return;
 
       fetch(`/api/search?q=${encodeURIComponent(q)}`)
@@ -164,13 +165,12 @@
     }
 
     function displayResults() {
-      const container = document.getElementById('results');
-      container.innerHTML = playlist.map((track, i) => `
+      document.getElementById("results").innerHTML = playlist.map((track, i) => `
         <div class="card" onclick="playTrack(${i})">
-          <img src="${track.thumb}" alt="">
+          <img src="${track.thumb}">
           <h3>${track.title}</h3>
           <p>${track.artist}</p>
-          <div class="play-btn"><i class="fas fa-play" style="margin-left:3px; font-size:22px"></i></div>
+          <div class="play-btn"><i class="fas fa-play"></i></div>
         </div>
       `).join('');
     }
@@ -179,35 +179,56 @@
       currentIndex = i;
       const t = playlist[i];
       player.loadVideoById(t.id);
-      document.getElementById('nowThumb').src = t.thumb;
-      document.getElementById('nowTitle').textContent = t.title;
-      document.getElementById('nowArtist').textContent = t.artist;
-      document.getElementById('playIcon').className = 'fas fa-pause-circle';
+      updateNowPlaying(t);
     }
 
-    function playPause() {
-      if (!player) return;
-      if (player.getPlayerState() === 1) {
-        player.pauseVideo();
-        document.getElementById('playIcon').className = 'fas fa-play-circle';
-      } else {
+    function updateNowPlaying(t) {
+      nowThumb.src = t.thumb;
+      nowTitle.textContent = t.title;
+      nowArtist.textContent = t.artist;
+      playIcon.className = "fas fa-pause-circle";
+    }
+
+    //
+    // 🔥 ENDLESS AUTOPLAY
+    //
+    function loadRecommendedAndPlay() {
+      const recs = player.getPlaylist();
+
+      if (!recs || !recs.length) {
         player.playVideo();
-        document.getElementById('playIcon').className = 'fas fa-pause-circle';
+        return;
       }
-    }
 
-    async function nextTrack() {
-      const current = playlist[currentIndex];
-      const res = await fetch(`/api/similar?id=${current.id}`);
-      const similar = await res.json();
+      const shuffled = recs.sort(() => Math.random() - 0.5);
 
-      playlist = similar;
+      playlist = shuffled.map(id => ({
+        id,
+        title: "Recommended Track",
+        artist: "YouTube",
+        thumb: `https://img.youtube.com/vi/${id}/hqdefault.jpg`
+      }));
+
       currentIndex = 0;
       playTrack(0);
     }
 
+    function nextTrack() {
+      loadRecommendedAndPlay();
+    }
+
     function prevTrack() {
-      if (playlist.length) playTrack((currentIndex - 1 + playlist.length) % playlist.length);
+      player.previousVideo();
+    }
+
+    function playPause() {
+      if (player.getPlayerState() === 1) {
+        player.pauseVideo();
+        playIcon.className = 'fas fa-play-circle';
+      } else {
+        player.playVideo();
+        playIcon.className = 'fas fa-pause-circle';
+      }
     }
 
     setInterval(() => {
@@ -215,9 +236,9 @@
         const current = player.getCurrentTime() || 0;
         const duration = player.getDuration() || 0;
         const percent = duration ? (current / duration) * 100 : 0;
-        document.getElementById('progressFill').style.width = percent + '%';
-        document.getElementById('currentTime').textContent = formatTime(current);
-        document.getElementById('duration').textContent = formatTime(duration);
+        progressFill.style.width = percent + '%';
+        currentTime.textContent = formatTime(current);
+        durationSpan.textContent = formatTime(duration);
       }
     }, 1000);
 
@@ -227,5 +248,6 @@
       return `${m}:${s.toString().padStart(2,'0')}`;
     }
   </script>
+
 </body>
 </html>

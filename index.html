@@ -16,32 +16,195 @@
     }
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; overflow:hidden; }
-    .sidebar { width:240px; background:var(--sidebar); padding:20px 0; flex-shrink:0; }
-    .logo { padding:0 24px; font-size:28px; font-weight:900; color:var(--primary); margin-bottom:40px; }
-    .nav { padding:0 16px; }
-    .nav a { display:flex; align-items:center; gap:16px; padding:12px 8px; color:var(--text-secondary); text-decoration:none; border-radius:4px; margin-bottom:4px; font-weight:600; }
-    .nav a.active, .nav a:hover { background:#282828; color:var(--active); }
-    .nav a i { font-size:20px; width:24px; text-align:center; }
-    .main { flex:1; display:flex; flex-direction:column; background:linear-gradient(180deg, #1f1f1f 0%, var(--bg) 30%); }
-    .topbar { height:64px; background:rgba(0,0,0,0.7); backdrop-filter:blur(20px); padding:0 24px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10; }
-    .search-input { background:#242424; border-radius:30px; padding:10px 40px 10px 16px; color:white; border:none; width:380px; font-size:15px; }
-    .content { flex:1; padding:32px 24px; overflow-y:auto; }
-    .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:24px; }
-    .card { background:#181818; border-radius:8px; padding:16px; transition:.2s; cursor:pointer; position:relative; }
-    .card:hover { background:#282828; transform:scale(1.04); }
-    .card img { width:100%; border-radius:6px; margin-bottom:12px; }
-    .card h3 { font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .card p { font-size:13px; color:var(--text-secondary); }
-    .player { height:90px; background:#181818; border-top:1px solid #282828; display:flex; align-items:center; padding:0 16px; gap:24px; }
-    .now-playing { display:flex; align-items:center; gap:14px; min-width:0; flex:1; }
-    .now-playing img { width:56px; height:56px; border-radius:4px; }
-    .now-info div { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .controls { flex:2; display:flex; flex-direction:column; align-items:center; gap:8px; }
-    .control-btns { display:flex; align-items:center; gap:20px; }
-    #playPauseBtn { font-size:28px !important; }
-    .progress-bar { width:100%; height:4px; background:#404040; border-radius:2px; overflow:hidden; }
-    .progress-fill { height:100%; width:0%; background:var(--primary); }
-    .volume { flex:1; display:flex; align-items:center; justify-content:flex-end; gap:10px; max-width:200px; }
+
+    .sidebar {
+      width:240px;
+      background:var(--sidebar);
+      padding:20px 0;
+      flex-shrink:0;
+    }
+    .logo {
+      padding:0 24px;
+      font-size:28px;
+      font-weight:900;
+      color:var(--primary);
+      margin-bottom:40px;
+    }
+    .nav {
+      padding:0 16px;
+    }
+    .nav a {
+      display:flex;
+      align-items:center;
+      gap:16px;
+      padding:12px 8px;
+      color:var(--text-secondary);
+      text-decoration:none;
+      border-radius:4px;
+      margin-bottom:4px;
+      font-weight:600;
+    }
+    .nav a.active,
+    .nav a:hover {
+      background:#282828;
+      color:var(--active);
+    }
+
+    .main {
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      background:linear-gradient(180deg, #1f1f1f 0%, var(--bg) 30%);
+    }
+
+    .topbar {
+      height:64px;
+      background:rgba(0,0,0,0.7);
+      backdrop-filter:blur(20px);
+      padding:0 24px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      position:sticky;
+      top:0;
+      z-index:10;
+    }
+
+    .search-input {
+      background:#242424;
+      border-radius:30px;
+      padding:10px 40px 10px 16px;
+      color:white;
+      border:none;
+      width:380px;
+      font-size:15px;
+    }
+
+    .content {
+      flex:1;
+      padding:32px 24px;
+      overflow-y:auto;
+    }
+
+    .grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fill, minmax(180px,1fr));
+      gap:24px;
+    }
+
+    .card {
+      background:#181818;
+      border-radius:8px;
+      padding:16px;
+      transition:.2s;
+      cursor:pointer;
+      position:relative;
+    }
+    .card:hover {
+      background:#282828;
+      transform:scale(1.04);
+    }
+    .card img {
+      width:100%;
+      border-radius:6px;
+      margin-bottom:12px;
+    }
+    .card h3 {
+      font-size:14px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .card p {
+      font-size:13px;
+      color:var(--text-secondary);
+    }
+    .play-btn {
+      width:50px;
+      height:50px;
+      background:var(--primary);
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 8px 20px rgba(29,185,84,.5);
+      position:absolute;
+      bottom:70px;
+      right:16px;
+      opacity:0;
+      transition:.3s;
+    }
+    .card:hover .play-btn {
+      opacity:1;
+      transform:translateY(-10px);
+    }
+
+    .player {
+      height:90px;
+      background:#181818;
+      border-top:1px solid #282828;
+      display:flex;
+      align-items:center;
+      padding:0 16px;
+      gap:24px;
+    }
+
+    .now-playing {
+      display:flex;
+      align-items:center;
+      gap:14px;
+      min-width:0;
+      flex:1;
+    }
+    .now-playing img {
+      width:56px;
+      height:56px;
+      border-radius:4px;
+    }
+
+    .now-info div {
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .controls {
+      flex:2;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:8px;
+    }
+
+    .control-btns {
+      display:flex;
+      align-items:center;
+      gap:20px;
+    }
+    .control-btns button {
+      background:none;
+      border:none;
+      color:white;
+      cursor:pointer;
+    }
+
+    #playPauseBtn i {
+      font-size:32px;
+    }
+
+    .progress-bar {
+      width:100%;
+      height:4px;
+      background:#404040;
+      border-radius:2px;
+      overflow:hidden;
+    }
+
+    .progress-fill {
+      height:100%;
+      width:0%;
+      background:var(--primary);
+    }
   </style>
 </head>
 <body>
@@ -60,6 +223,7 @@
 
     <!-- Main -->
     <div class="main">
+
       <div class="topbar">
         <div></div>
         <input id="searchInput" class="search-input" placeholder="Search for music..." onkeypress="if(event.key==='Enter') search()">
@@ -82,11 +246,22 @@
 
         <div class="controls">
           <div class="control-btns">
-            <button onclick="prevTrack()"><i class="fas fa-step-backward"></i></button>
-            <button id="playPauseBtn" onclick="playPause()"><i id="playIcon" class="fas fa-play-circle"></i></button>
-            <button onclick="nextTrack()"><i class="fas fa-step-forward"></i></button>
+            <button onclick="prevTrack()">
+              <i class="fas fa-step-backward" style="font-size:18px"></i>
+            </button>
+
+            <button id="playPauseBtn" onclick="playPause()">
+              <i id="playIcon" class="fas fa-play-circle" style="font-size:32px"></i>
+            </button>
+
+            <button onclick="nextTrack()">
+              <i class="fas fa-step-forward" style="font-size:18px"></i>
+            </button>
           </div>
-          <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+
+          <div class="progress-bar">
+            <div id="progressFill" class="progress-fill"></div>
+          </div>
         </div>
 
         <div class="volume">
@@ -94,6 +269,7 @@
           <input type="range" min="0" max="100" value="80">
         </div>
       </div>
+
     </div>
   </div>
 
@@ -105,8 +281,9 @@ let player;
 let playlist = [];
 let currentIndex = 0;
 
+// YouTube player ready
 function onYouTubeIframeAPIReady() {
-  player = new YT.Player('ytplayer', {
+  player = new YT.Player("ytplayer", {
     height: "0",
     width: "0",
     playerVars: { autoplay: 1, controls: 0 },
@@ -115,9 +292,10 @@ function onYouTubeIframeAPIReady() {
 }
 
 function onPlayerStateChange(e) {
-  if (e.data === 0) nextTrack();  // auto next
+  if (e.data === 0) nextTrack(); // Auto play next
 }
 
+// Search
 function search() {
   const q = searchInput.value.trim();
   if (!q) return;
@@ -131,16 +309,22 @@ function search() {
     });
 }
 
+// Display results with play overlay
 function displayResults() {
   results.innerHTML = playlist.map((t, i) => `
     <div class="card" onclick="playTrack(${i})">
       <img src="${t.thumb}">
       <h3>${t.title}</h3>
       <p>${t.artist}</p>
+
+      <div class="play-btn">
+        <i class="fas fa-play" style="margin-left:2px; font-size:22px;"></i>
+      </div>
     </div>
   `).join("");
 }
 
+// Play track
 function playTrack(i) {
   currentIndex = i;
   const t = playlist[i];
@@ -149,9 +333,11 @@ function playTrack(i) {
   nowThumb.src = t.thumb;
   nowTitle.textContent = t.title;
   nowArtist.textContent = t.artist;
+
   playIcon.className = "fas fa-pause-circle";
 }
 
+// Pause/Play
 function playPause() {
   if (player.getPlayerState() === 1) {
     player.pauseVideo();
@@ -162,6 +348,7 @@ function playPause() {
   }
 }
 
+// NEXT: fetch related songs (endless radio mode)
 async function nextTrack() {
   const id = playlist[currentIndex].id;
 
@@ -174,8 +361,13 @@ async function nextTrack() {
   playTrack(0);
 }
 
+// Back
 function prevTrack() {
-  if (currentIndex > 0) playTrack(--currentIndex);
+  if (currentIndex > 0) {
+    playTrack(--currentIndex);
+  } else {
+    playTrack(0);
+  }
 }
   </script>
 

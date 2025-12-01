@@ -22,231 +22,161 @@
     .nav a { display:flex; align-items:center; gap:16px; padding:12px 8px; color:var(--text-secondary); text-decoration:none; border-radius:4px; margin-bottom:4px; font-weight:600; }
     .nav a.active, .nav a:hover { background:#282828; color:var(--active); }
     .nav a i { font-size:20px; width:24px; text-align:center; }
-    .playlists { margin-top:40px; padding:0 24px; }
-    .playlists a { display:flex; align-items:center; gap:12px; color:var(--text-secondary); text-decoration:none; margin-bottom:12px; font-size:14px; }
     .main { flex:1; display:flex; flex-direction:column; background:linear-gradient(180deg, #1f1f1f 0%, var(--bg) 30%); }
     .topbar { height:64px; background:rgba(0,0,0,0.7); backdrop-filter:blur(20px); padding:0 24px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10; }
     .search-input { background:#242424; border-radius:30px; padding:10px 40px 10px 16px; color:white; border:none; width:380px; font-size:15px; }
-    .search-input::placeholder { color:#a0a0a0; }
     .content { flex:1; padding:32px 24px; overflow-y:auto; }
-    h1 { font-size:48px; margin-bottom:32px; }
     .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:24px; }
     .card { background:#181818; border-radius:8px; padding:16px; transition:.2s; cursor:pointer; position:relative; }
     .card:hover { background:#282828; transform:scale(1.04); }
     .card img { width:100%; border-radius:6px; margin-bottom:12px; }
     .card h3 { font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .card p { font-size:13px; color:var(--text-secondary); }
-    .play-btn { width:50px; height:50px; background:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(29,185,84,.5); position:absolute; bottom:70px; right:16px; opacity:0; transition:.3s; }
-    .card:hover .play-btn { opacity:1; transform:translateY(-10px); }
     .player { height:90px; background:#181818; border-top:1px solid #282828; display:flex; align-items:center; padding:0 16px; gap:24px; }
     .now-playing { display:flex; align-items:center; gap:14px; min-width:0; flex:1; }
     .now-playing img { width:56px; height:56px; border-radius:4px; }
-    .now-info { min-width:0; }
     .now-info div { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .controls { flex:2; display:flex; flex-direction:column; align-items:center; gap:8px; }
     .control-btns { display:flex; align-items:center; gap:20px; }
-    .control-btns button { background:none; border:none; color:white; font-size:18px; cursor:pointer; }
-    #playPauseBtn { font-size:32px !important; }
+    #playPauseBtn { font-size:28px !important; }
     .progress-bar { width:100%; height:4px; background:#404040; border-radius:2px; overflow:hidden; }
-    .progress-fill { height:100%; width:0%; background:var(--primary); transition:width .1s; }
+    .progress-fill { height:100%; width:0%; background:var(--primary); }
     .volume { flex:1; display:flex; align-items:center; justify-content:flex-end; gap:10px; max-width:200px; }
   </style>
 </head>
 <body>
   <div style="display:flex; height:100%">
+
+    <!-- Sidebar -->
     <div class="sidebar">
       <div class="logo">OGmusic</div>
       <div class="nav">
-        <a href="#" class="active" data-page="home"><i class="fas fa-home"></i> Home</a>
-        <a href="#" data-page="search"><i class="fas fa-search"></i> Search</a>
-        <a href="#" data-page="library"><i class="fas fa-book"></i> Your Library</a>
-        <a href="#" data-page="liked"><i class="fas fa-heart"></i> Liked Songs</a>
-      </div>
-      <div class="playlists">
-        <a href="#"><i class="fas fa-plus-square"></i> Create Playlist</a>
+        <a href="#" class="active"><i class="fas fa-home"></i> Home</a>
+        <a href="#"><i class="fas fa-search"></i> Search</a>
+        <a href="#"><i class="fas fa-book"></i> Library</a>
+        <a href="#"><i class="fas fa-heart"></i> Liked</a>
       </div>
     </div>
 
+    <!-- Main -->
     <div class="main">
       <div class="topbar">
         <div></div>
-        <input type="text" class="search-input" placeholder="What do you want to play?" id="searchInput" onkeypress="if(event.key==='Enter') search()">
+        <input id="searchInput" class="search-input" placeholder="Search for music..." onkeypress="if(event.key==='Enter') search()">
         <div></div>
       </div>
 
       <div class="content">
-        <h1 id="pageTitle">Good evening</h1>
         <div class="grid" id="results"></div>
       </div>
 
+      <!-- Player -->
       <div class="player">
         <div class="now-playing">
-          <img id="nowThumb" src="https://via.placeholder.com/56" alt="">
+          <img id="nowThumb" src="https://via.placeholder.com/56">
           <div class="now-info">
-            <div id="nowTitle">Select a song to play</div>
-            <small id="nowArtist" style="color:#b3b3b3">OGmusic</small>
+            <div id="nowTitle">Nothing playing</div>
+            <small id="nowArtist" style="color:#b3b3b3"></small>
           </div>
-          <i class="far fa-heart" style="margin-left:auto; cursor:pointer"></i>
         </div>
 
         <div class="controls">
           <div class="control-btns">
-            <button><i class="fas fa-random"></i></button>
             <button onclick="prevTrack()"><i class="fas fa-step-backward"></i></button>
             <button id="playPauseBtn" onclick="playPause()"><i id="playIcon" class="fas fa-play-circle"></i></button>
             <button onclick="nextTrack()"><i class="fas fa-step-forward"></i></button>
-            <button><i class="fas fa-redo"></i></button>
           </div>
-          <div style="width:100%; display:flex; align-items:center; gap:10px; font-size:12px">
-            <span id="currentTime">0:00</span>
-            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-            <span id="duration">0:00</span>
-          </div>
+          <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
         </div>
 
         <div class="volume">
           <i class="fas fa-volume-up"></i>
-          <input type="range" min="0" max="100" value="80"/>
+          <input type="range" min="0" max="100" value="80">
         </div>
       </div>
     </div>
   </div>
 
-  <div id="ytplayer" style="position:fixed; opacity:0; pointer-events:none"></div>
-
+  <div id="ytplayer" style="opacity:0; pointer-events:none; position:fixed"></div>
   <script src="https://www.youtube.com/iframe_api"></script>
 
   <script>
-    let player;
-    let playlist = [];
-    let currentIndex = 0;
+let player;
+let playlist = [];
+let currentIndex = 0;
 
-    document.querySelectorAll('.nav a').forEach(link => {
-      link.addEventListener('click', e => {
-        e.preventDefault();
-        document.querySelector('.nav a.active')?.classList.remove('active');
-        link.classList.add('active');
-        const page = link.dataset.page;
-        document.getElementById('pageTitle').textContent = 
-          page === 'home' ? 'Good evening' :
-          page === 'search' ? 'Search' :
-          page === 'library' ? 'Your Library' :
-          'Liked Songs';
-        if (page !== 'search') 
-          document.getElementById('results').innerHTML = '<p style="color:#aaa; text-align:center; margin-top:100px">Coming soon</p>';
-      });
-    });
+function onYouTubeIframeAPIReady() {
+  player = new YT.Player('ytplayer', {
+    height: "0",
+    width: "0",
+    playerVars: { autoplay: 1, controls: 0 },
+    events: { onStateChange: onPlayerStateChange }
+  });
+}
 
-    function onYouTubeIframeAPIReady() {
-      player = new YT.Player('ytplayer', {
-        height: '0', width: '0',
-        playerVars: { autoplay:1, controls:0, rel:1 },
-        events: { onStateChange: onPlayerStateChange }
-      });
-    }
+function onPlayerStateChange(e) {
+  if (e.data === 0) nextTrack();  // auto next
+}
 
-    function onPlayerStateChange(e) {
-      if (e.data === 0) {
-        loadRecommendedAndPlay();
-      }
-    }
+function search() {
+  const q = searchInput.value.trim();
+  if (!q) return;
 
-    function search() {
-      const q = document.getElementById("searchInput").value.trim();
-      if (!q) return;
-
-      fetch(`/api/search?q=${encodeURIComponent(q)}`)
-        .then(r => r.json())
-        .then(data => {
-          playlist = data;
-          currentIndex = 0;
-          displayResults();
-        });
-    }
-
-    function displayResults() {
-      document.getElementById("results").innerHTML = playlist.map((track, i) => `
-        <div class="card" onclick="playTrack(${i})">
-          <img src="${track.thumb}">
-          <h3>${track.title}</h3>
-          <p>${track.artist}</p>
-          <div class="play-btn"><i class="fas fa-play"></i></div>
-        </div>
-      `).join('');
-    }
-
-    function playTrack(i) {
-      currentIndex = i;
-      const t = playlist[i];
-      player.loadVideoById(t.id);
-      updateNowPlaying(t);
-    }
-
-    function updateNowPlaying(t) {
-      nowThumb.src = t.thumb;
-      nowTitle.textContent = t.title;
-      nowArtist.textContent = t.artist;
-      playIcon.className = "fas fa-pause-circle";
-    }
-
-    //
-    // 🔥 ENDLESS AUTOPLAY
-    //
-    function loadRecommendedAndPlay() {
-      const recs = player.getPlaylist();
-
-      if (!recs || !recs.length) {
-        player.playVideo();
-        return;
-      }
-
-      const shuffled = recs.sort(() => Math.random() - 0.5);
-
-      playlist = shuffled.map(id => ({
-        id,
-        title: "Recommended Track",
-        artist: "YouTube",
-        thumb: `https://img.youtube.com/vi/${id}/hqdefault.jpg`
-      }));
-
+  fetch(`/api/search?q=${encodeURIComponent(q)}`)
+    .then(r => r.json())
+    .then(data => {
+      playlist = data;
       currentIndex = 0;
-      playTrack(0);
-    }
+      displayResults();
+    });
+}
 
-    function nextTrack() {
-      loadRecommendedAndPlay();
-    }
+function displayResults() {
+  results.innerHTML = playlist.map((t, i) => `
+    <div class="card" onclick="playTrack(${i})">
+      <img src="${t.thumb}">
+      <h3>${t.title}</h3>
+      <p>${t.artist}</p>
+    </div>
+  `).join("");
+}
 
-    function prevTrack() {
-      player.previousVideo();
-    }
+function playTrack(i) {
+  currentIndex = i;
+  const t = playlist[i];
+  player.loadVideoById(t.id);
 
-    function playPause() {
-      if (player.getPlayerState() === 1) {
-        player.pauseVideo();
-        playIcon.className = 'fas fa-play-circle';
-      } else {
-        player.playVideo();
-        playIcon.className = 'fas fa-pause-circle';
-      }
-    }
+  nowThumb.src = t.thumb;
+  nowTitle.textContent = t.title;
+  nowArtist.textContent = t.artist;
+  playIcon.className = "fas fa-pause-circle";
+}
 
-    setInterval(() => {
-      if (player && player.getCurrentTime) {
-        const current = player.getCurrentTime() || 0;
-        const duration = player.getDuration() || 0;
-        const percent = duration ? (current / duration) * 100 : 0;
-        progressFill.style.width = percent + '%';
-        currentTime.textContent = formatTime(current);
-        durationSpan.textContent = formatTime(duration);
-      }
-    }, 1000);
+function playPause() {
+  if (player.getPlayerState() === 1) {
+    player.pauseVideo();
+    playIcon.className = "fas fa-play-circle";
+  } else {
+    player.playVideo();
+    playIcon.className = "fas fa-pause-circle";
+  }
+}
 
-    function formatTime(seconds) {
-      const m = Math.floor(seconds / 60);
-      const s = Math.floor(seconds % 60);
-      return `${m}:${s.toString().padStart(2,'0')}`;
-    }
+async function nextTrack() {
+  const id = playlist[currentIndex].id;
+
+  const related = await fetch(`/api/related?id=${id}`).then(r => r.json());
+
+  if (related.length === 0) return;
+
+  playlist = related;
+  currentIndex = 0;
+  playTrack(0);
+}
+
+function prevTrack() {
+  if (currentIndex > 0) playTrack(--currentIndex);
+}
   </script>
 
 </body>
